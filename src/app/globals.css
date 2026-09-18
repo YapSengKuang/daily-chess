@@ -1,0 +1,160 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #f4efe4;
+  --ink: #1c1915;
+  --muted: #6d6558;
+  --card: #fffaf1;
+  --line: #e2d8c6;
+  --accent: #2f5d50;
+  --accent-ink: #f7f1e6;
+  --good: #3f7d4e;
+  --ok: #c9a227;
+  --bad: #9a3b32;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  background: radial-gradient(circle at top, #fbf6ea, var(--bg));
+  color: var(--ink);
+  font-family: var(--font-sans), sans-serif;
+}
+
+.page {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 28px 20px 64px;
+}
+
+.top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.brand {
+  font-family: var(--font-display), serif;
+  font-size: 32px;
+  margin: 0;
+}
+
+.muted {
+  color: var(--muted);
+  margin: 4px 0 0;
+}
+
+.btn {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border: 0;
+  border-radius: 999px;
+  padding: 10px 16px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.game {
+  display: grid;
+  grid-template-columns: minmax(280px, 520px) 1fr;
+  gap: 28px;
+  align-items: start;
+}
+
+.board-wrap {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 12px;
+  width: min(100%, 520px);
+}
+
+.panel {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 22px;
+}
+
+.panel h2 {
+  font-family: var(--font-display), serif;
+  margin: 0 0 8px;
+}
+
+.kicker {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 12px;
+  color: var(--muted);
+  margin: 0 0 8px;
+}
+
+.meta {
+  display: flex;
+  gap: 16px;
+  margin: 16px 0;
+  font-weight: 600;
+}
+
+.grid {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.cell {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  background: #ece4d4;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.cell-correct {
+  background: var(--good);
+  color: white;
+}
+
+.cell-retry {
+  background: var(--ok);
+  color: white;
+}
+
+.cell-miss {
+  background: var(--bad);
+  color: white;
+}
+
+.solution {
+  font-weight: 600;
+}
+
+textarea {
+  width: 100%;
+  margin: 8px 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  resize: none;
+  background: #fff;
+  color: var(--ink);
+}
+
+@media (max-width: 800px) {
+  .game,
+  .top {
+    grid-template-columns: 1fr;
+    display: grid;
+  }
+}
