@@ -1,8 +1,6 @@
 "use client";
 
 import { daysInUtcMonth, isIsoDate, monthKey, puzzleNumber, todayUtc } from "@/lib/date";
-import { bootstrapProgress } from "@/lib/firebase-progress";
-import { subscribeAuth } from "@/lib/firebase";
 import { getAllAttempts, type StoredAttempt } from "@/lib/local-progress";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
@@ -22,10 +20,25 @@ export function ArchiveCalendar({ initialMonth }: { initialMonth: string }) {
   useEffect(() => {
     const show = () => setAttempts(getAllAttempts());
     show();
-    void bootstrapProgress().then(show);
-    return subscribeAuth(() => {
-      void bootstrapProgress().then(show);
-    });
+    let cancelled = false;
+    let unsub = () => {};
+    void Promise.all([import("@/lib/firebase-progress"), import("@/lib/firebase")]).then(
+      ([{ bootstrapProgress }, { subscribeAuth }]) => {
+        if (cancelled) return;
+        void bootstrapProgress().then(() => {
+          if (!cancelled) show();
+        });
+        unsub = subscribeAuth(() => {
+          void bootstrapProgress().then(() => {
+            if (!cancelled) show();
+          });
+        });
+      },
+    );
+    return () => {
+      cancelled = true;
+      unsub();
+    };
   }, [month]);
 
   const cells = useMemo(() => {

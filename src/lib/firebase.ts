@@ -64,7 +64,6 @@ async function startAnalytics() {
 export async function getCurrentUser(): Promise<User | null> {
   const firebaseAuth = getFirebaseAuth();
   if (!firebaseAuth) return null;
-  void startAnalytics();
   await firebaseAuth.authStateReady();
   return firebaseAuth.currentUser;
 }
@@ -182,5 +181,8 @@ export function subscribeAuth(listener: (user: User | null) => void) {
     listener(null);
     return () => undefined;
   }
-  return onAuthStateChanged(firebaseAuth, listener);
+  return onAuthStateChanged(firebaseAuth, (user) => {
+    void startAnalytics();
+    listener(user);
+  });
 }

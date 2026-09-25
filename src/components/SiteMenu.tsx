@@ -1,16 +1,6 @@
 "use client";
 
-import {
-  accountLabel,
-  authErrorMessage,
-  createEmailAccount,
-  getCurrentUser,
-  saveUsername,
-  signInWithEmail,
-  signInWithGoogle,
-  signOutUser,
-  subscribeAuth,
-} from "@/lib/firebase";
+import { loadFirebase } from "@/lib/firebase-lazy";
 import { getSoundEnabled, getStoredTheme, setSoundEnabled, setStoredTheme } from "@/lib/settings";
 import type { User } from "firebase/auth";
 import Link from "next/link";
@@ -119,7 +109,21 @@ export function SiteMenu() {
   const signedIn = Boolean(user && !user.isAnonymous);
   const needsUsername = signedIn && !user?.displayName?.trim();
 
-  useEffect(() => subscribeAuth(setUser), []);
+  useEffect(() => {
+    let unsub = () => {};
+    const start = () => {
+      void loadFirebase().then((api) => {
+        unsub = api.subscribeAuth(setUser);
+      });
+    };
+    const canIdle = typeof requestIdleCallback === "function";
+    const idle = canIdle ? requestIdleCallback(start, { timeout: 1500 }) : window.setTimeout(start, 1);
+    return () => {
+      if (canIdle) cancelIdleCallback(idle);
+      else window.clearTimeout(idle);
+      unsub();
+    };
+  }, []);
 
   useEffect(() => {
     setSound(getSoundEnabled());
@@ -136,21 +140,23 @@ export function SiteMenu() {
     setError("");
   }, [pathname]);
 
-  async function run(action: () => Promise<void>) {
+  async function run(action: (api: Awaited<ReturnType<typeof loadFirebase>>) => Promise<void>) {
     setBusy(true);
     setError("");
     try {
-      await action();
+      const api = await loadFirebase();
+      await action(api);
       setPassword("");
       setConfirm("");
       setPanel("menu");
-      const nextUser = await getCurrentUser();
+      const nextUser = await api.getCurrentUser();
       setUser(nextUser);
       if (nextUser && !nextUser.isAnonymous) {
         setOpen(false);
       }
     } catch (cause) {
-      setError(authErrorMessage(cause));
+      const api = await loadFirebase();
+      setError(api.authErrorMessage(cause));
     } finally {
       setBusy(false);
     }
@@ -163,14 +169,14 @@ export function SiteMenu() {
         setError("Passwords do not match.");
         return;
       }
-      void run(() => createEmailAccount(email, password, username));
+      void run((api) => api.createEmailAccount(email, password, username));
       return;
     }
     if (password !== confirm) {
       setError("Passwords do not match.");
       return;
     }
-    void run(() => signInWithEmail(email, password));
+    void run((api) => api.signInWithEmail(email, password));
   }
 
   return (
@@ -198,11 +204,11 @@ export function SiteMenu() {
               <div className="menu-account">
                 {signedIn ? (
                   <>
-                    <span className="account-name">{accountLabel(user)}</span>
+                    <span className="account-name">{user?.displayName?.trim() || user?.email || "Signed in"}</span>
                     <button
                       className="btn btn-ghost"
                       type="button"
-                      onClick={() => void signOutUser()}
+                      onClick={() => void loadFirebase().then((api) => api.signOutUser())}
                       disabled={busy}
                     >
                       Sign out
@@ -235,7 +241,7 @@ export function SiteMenu() {
                   className="auth-form"
                   onSubmit={(event) => {
                     event.preventDefault();
-                    void run(() => saveUsername(username));
+                    void run((api) => api.saveUsername(username));
                   }}
                 >
                   <p className="muted">Choose a username to show on the site.</p>
@@ -337,7 +343,7 @@ export function SiteMenu() {
                 className="btn"
                 type="button"
                 disabled={busy}
-                onClick={() => void run(signInWithGoogle)}
+                onClick={() => void run((api) => api.signInWithGoogle())}
               >
                 Continue with Google
               </button>

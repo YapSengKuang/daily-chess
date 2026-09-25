@@ -1,5 +1,3 @@
-"use client";
-
 import Link from "next/link";
 import { Countdown } from "./Countdown";
 import { SiteMenu } from "./SiteMenu";

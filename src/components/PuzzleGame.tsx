@@ -2,13 +2,11 @@
 
 import { Chess, type Square } from "chess.js";
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
-import { Chessboard } from "react-chessboard";
 import { uciToMove, type DailyPuzzle } from "@/lib/chess";
-import { getProgressOwner, loadLocalProgress } from "@/lib/local-progress";
-import { bootstrapProgress, saveProgressAttempt } from "@/lib/firebase-progress";
-import { subscribeAuth } from "@/lib/firebase";
-import { themeSummary } from "@/lib/puzzles";
+import { getProgressOwner, loadLocalProgress, saveLocalAttempt } from "@/lib/local-progress";
+import { themeSummary } from "@/lib/themes";
 import { FunFact } from "./FunFact";
+import { ChessBoardLazy } from "./ChessBoardLazy";
 import { playSound } from "@/lib/settings";
 import { buildShareText, shareResult, type PlyResult } from "@/lib/share";
 
@@ -68,13 +66,20 @@ export function PuzzleGame({
       const firstRecord = persist && !recordedRef.current;
       if (firstRecord) {
         recordedRef.current = true;
-        void saveProgressAttempt(puzzle.date, {
+        const nextStreak = saveLocalAttempt(puzzle.date, {
           solved,
           failed: !solved,
           results: nextResults,
           livesLeft,
         });
-        const nextStreak = loadLocalProgress(puzzle.date).streak;
+        void import("@/lib/firebase-progress").then(({ saveProgressAttempt }) =>
+          saveProgressAttempt(puzzle.date, {
+            solved,
+            failed: !solved,
+            results: nextResults,
+            livesLeft,
+          }),
+        );
         setStreak(nextStreak);
         setMessage(solved ? "Solved. Nice find." : "Out of lives. The solution is below.");
         setShareText(
@@ -296,16 +301,30 @@ export function PuzzleGame({
 
     startPosition();
     restore();
-    void bootstrapProgress().then(() => restore(true));
+    let cancelled = false;
+    let unsub = () => {};
     let owner = null as string | null;
-    return subscribeAuth(() => {
-      void bootstrapProgress().then(() => {
-        const nextOwner = getProgressOwner();
-        const switched = nextOwner !== owner;
-        owner = nextOwner;
-        restore(switched);
-      });
-    });
+    void Promise.all([import("@/lib/firebase-progress"), import("@/lib/firebase")]).then(
+      ([{ bootstrapProgress }, { subscribeAuth }]) => {
+        if (cancelled) return;
+        void bootstrapProgress().then(() => {
+          if (!cancelled) restore(true);
+        });
+        unsub = subscribeAuth(() => {
+          void bootstrapProgress().then(() => {
+            if (cancelled) return;
+            const nextOwner = getProgressOwner();
+            const switched = nextOwner !== owner;
+            owner = nextOwner;
+            restore(switched);
+          });
+        });
+      },
+    );
+    return () => {
+      cancelled = true;
+      unsub();
+    };
   }, [persist, puzzle]);
 
   const resetBoard = useCallback(() => {
@@ -409,7 +428,7 @@ export function PuzzleGame({
   return (
     <section className="game">
       <div className="board-wrap">
-        <Chessboard
+        <ChessBoardLazy
           options={{
             id: `puzzle-${puzzle.id}`,
             position: fen,

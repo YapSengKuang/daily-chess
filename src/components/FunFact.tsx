@@ -8,7 +8,7 @@ export function FunFact() {
 
   useEffect(() => {
     let cancelled = false;
-    void fetch("/api/fun-fact", { cache: "no-store" })
+    void fetch("/api/fun-fact")
       .then((response) => response.json())
       .then((body: { text?: string; source?: string }) => {
         if (cancelled || !body.text) return;

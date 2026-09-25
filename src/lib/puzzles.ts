@@ -1,10 +1,14 @@
 import puzzles from "../../data/puzzles.json";
-import {
-  playerMoveCount,
-  type DailyPuzzle,
-  type Puzzle,
-} from "./chess";
+import { playerMoveCount, type DailyPuzzle, type Puzzle } from "./chess";
 import { puzzleNumber, todayUtc } from "./date";
+
+export { prettyTheme, themeSummary } from "./themes";
+
+const ALL_PUZZLES = puzzles as Puzzle[];
+const ELIGIBLE = ALL_PUZZLES.filter((puzzle) => {
+  const count = playerMoveCount(puzzle.moves);
+  return count >= 3 && count <= 6;
+});
 
 function hashDate(date: string): number {
   let hash = 0;
@@ -15,10 +19,7 @@ function hashDate(date: string): number {
 }
 
 export function eligiblePuzzles(): Puzzle[] {
-  return (puzzles as Puzzle[]).filter((puzzle) => {
-    const count = playerMoveCount(puzzle.moves);
-    return count >= 3 && count <= 6;
-  });
+  return ELIGIBLE;
 }
 
 function toDailyPuzzle(puzzle: Puzzle, date: string, number: number): DailyPuzzle {
@@ -46,35 +47,4 @@ export function getPracticePuzzle(excludeIds: string[] = []): DailyPuzzle {
   const source = eligible.length > 0 ? eligible : eligiblePuzzles();
   const puzzle = source[Math.floor(Math.random() * source.length)];
   return toDailyPuzzle(puzzle, todayUtc(), 0);
-}
-
-export function prettyTheme(theme: string): string {
-  const labels: Record<string, string> = {
-    mateIn1: "Mate in 1",
-    mateIn2: "Mate in 2",
-    mateIn3: "Mate in 3",
-    mateIn4: "Mate in 4",
-    mateIn5: "Mate in 5",
-    veryLong: "Long combo",
-    short: "Short",
-    long: "Long",
-    endgame: "Endgame",
-    middlegame: "Middlegame",
-    opening: "Opening",
-    kingsideAttack: "Kingside attack",
-    hangingPiece: "Hanging piece",
-    discoveredAttack: "Discovered attack",
-    smotheredMate: "Smothered mate",
-    backRankMate: "Back-rank mate",
-    quietMove: "Quiet move",
-    advancedPawn: "Advanced pawn",
-  };
-  if (labels[theme]) return labels[theme];
-  return theme
-    .replace(/([A-Z])/g, " $1")
-    .replace(/^./, (letter) => letter.toUpperCase());
-}
-
-export function themeSummary(themes: string[], limit = 3): string {
-  return themes.slice(0, limit).map(prettyTheme).join(" · ");
 }

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { todayUtc } from "@/lib/date";
 import { allowRequest, clientKey } from "@/lib/rate-limit";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 3600;
 
 const CHESS_FALLBACK = [
   "The longest official chess game lasted 269 moves (Ivan Nikolic vs Goran Arsovic, 1989) and ended in a draw.",

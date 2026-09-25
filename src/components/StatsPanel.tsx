@@ -1,7 +1,5 @@
 "use client";
 
-import { bootstrapProgress } from "@/lib/firebase-progress";
-import { subscribeAuth } from "@/lib/firebase";
 import { getLocalStats, type LocalStats } from "@/lib/local-progress";
 import { useEffect, useState } from "react";
 
@@ -11,10 +9,25 @@ export function StatsPanel() {
   useEffect(() => {
     const show = () => setStats(getLocalStats());
     show();
-    void bootstrapProgress().then(show);
-    return subscribeAuth(() => {
-      void bootstrapProgress().then(show);
-    });
+    let cancelled = false;
+    let unsub = () => {};
+    void Promise.all([import("@/lib/firebase-progress"), import("@/lib/firebase")]).then(
+      ([{ bootstrapProgress }, { subscribeAuth }]) => {
+        if (cancelled) return;
+        void bootstrapProgress().then(() => {
+          if (!cancelled) show();
+        });
+        unsub = subscribeAuth(() => {
+          void bootstrapProgress().then(() => {
+            if (!cancelled) show();
+          });
+        });
+      },
+    );
+    return () => {
+      cancelled = true;
+      unsub();
+    };
   }, []);
 
   if (!stats) {

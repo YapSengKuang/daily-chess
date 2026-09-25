@@ -351,6 +351,13 @@ a {
   max-width: 560px;
 }
 
+.board-skeleton {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--line) 55%, var(--card));
+}
+
 .panel {
   background: var(--card);
   border: 1px solid var(--line);

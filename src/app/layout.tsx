@@ -7,11 +7,14 @@ import "./globals.css";
 const display = Fraunces({
   variable: "--font-display",
   subsets: ["latin"],
+  display: "swap",
+  preload: false,
 });
 
 const sans = Source_Sans_3({
   variable: "--font-sans",
   subsets: ["latin"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
