@@ -27,6 +27,10 @@ function writeStore(store: Store) {
   window.localStorage.setItem(KEY, JSON.stringify(store));
 }
 
+export function replaceLocalAttempts(attempts: Record<string, StoredAttempt>) {
+  writeStore({ attempts });
+}
+
 export function getAllAttempts(): Record<string, StoredAttempt> {
   return readStore().attempts;
 }

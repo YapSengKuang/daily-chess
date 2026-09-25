@@ -1,5 +1,7 @@
 "use client";
 
+import { bootstrapProgress } from "@/lib/firebase-progress";
+import { subscribeAuth } from "@/lib/firebase";
 import { getLocalStats, type LocalStats } from "@/lib/local-progress";
 import { useEffect, useState } from "react";
 
@@ -7,7 +9,12 @@ export function StatsPanel() {
   const [stats, setStats] = useState<LocalStats | null>(null);
 
   useEffect(() => {
-    setStats(getLocalStats());
+    const show = () => setStats(getLocalStats());
+    show();
+    void bootstrapProgress().then(show);
+    return subscribeAuth(() => {
+      void bootstrapProgress().then(show);
+    });
   }, []);
 
   if (!stats) {
@@ -27,7 +34,9 @@ export function StatsPanel() {
   return (
     <section className="panel stats">
       <h2>Your stats</h2>
-      <p className="muted">Kept in this browser only. Clearing site data resets them.</p>
+      <p className="muted">
+        Sign in to sync streak and stats to Firebase. Guests keep progress in this browser only.
+      </p>
       <dl className="stat-grid">
         {items.map(([label, value]) => (
           <div key={label}>

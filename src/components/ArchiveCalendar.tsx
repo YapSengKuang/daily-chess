@@ -1,6 +1,8 @@
 "use client";
 
 import { daysInUtcMonth, isIsoDate, monthKey, puzzleNumber, todayUtc } from "@/lib/date";
+import { bootstrapProgress } from "@/lib/firebase-progress";
+import { subscribeAuth } from "@/lib/firebase";
 import { getAllAttempts, type StoredAttempt } from "@/lib/local-progress";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
@@ -18,7 +20,12 @@ export function ArchiveCalendar({ initialMonth }: { initialMonth: string }) {
   const [attempts, setAttempts] = useState<Record<string, StoredAttempt>>({});
 
   useEffect(() => {
-    setAttempts(getAllAttempts());
+    const show = () => setAttempts(getAllAttempts());
+    show();
+    void bootstrapProgress().then(show);
+    return subscribeAuth(() => {
+      void bootstrapProgress().then(show);
+    });
   }, [month]);
 
   const cells = useMemo(() => {
@@ -53,8 +60,8 @@ export function ArchiveCalendar({ initialMonth }: { initialMonth: string }) {
         </button>
       </div>
       <p className="muted">
-        Past days stay open. Future days stay locked. Today resets at 00:00 UTC. Results are stored
-        in this browser.
+        Past days stay open. Future days stay locked. Today resets at 00:00 UTC. Sign in to sync
+        results to your Firebase account.
       </p>
       <div className="calendar-weekdays">
         {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (

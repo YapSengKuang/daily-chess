@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { AuthControls } from "./AuthControls";
 import { Countdown } from "./Countdown";
 import { PreferenceToggles } from "./PreferenceToggles";
 
@@ -44,6 +45,7 @@ export function SiteHeader() {
           ))}
         </nav>
         <PreferenceToggles />
+        <AuthControls />
       </div>
     </header>
   );
