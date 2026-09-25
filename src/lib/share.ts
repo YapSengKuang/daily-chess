@@ -19,10 +19,20 @@ export function buildShareText(options: {
   const score = options.solved
     ? `${options.playerMoves}/${options.playerMoves}`
     : `X/${options.playerMoves}`;
+  const label = options.number > 0 ? `Daily Chess #${options.number} ${options.date}` : "Daily Chess · Practice";
 
-  return [
-    `Daily Chess #${options.number} ${options.date}`,
-    `${score}  ${grid}`,
-    `Streak: ${options.streak} 🔥`,
-  ].join("\n");
+  return [`${label}`, `${score}  ${grid}`, `Streak: ${options.streak} 🔥`].join("\n");
+}
+
+export async function shareResult(text: string): Promise<"shared" | "copied"> {
+  if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
+    try {
+      await navigator.share({ title: "Daily Chess", text });
+      return "shared";
+    } catch {
+      // Fall through to clipboard if the user cancels or share is unavailable.
+    }
+  }
+  await navigator.clipboard.writeText(text);
+  return "copied";
 }

@@ -1,19 +1,13 @@
 import type { Attempt } from "./chess";
-import type { PlyResult } from "./share";
-import { currentStreak } from "./streak";
+import { computeStats, type AccountStats, type StoredAttempt } from "./progress-types";
+import { todayUtc } from "./date";
+
+export type { AccountStats as LocalStats, StoredAttempt };
 
 const KEY = "daily-chess-progress";
 
 type Store = {
-  attempts: Record<
-    string,
-    {
-      solved: boolean;
-      failed: boolean;
-      completed: boolean;
-      results: PlyResult[];
-    }
-  >;
+  attempts: Record<string, StoredAttempt>;
 };
 
 function readStore(): Store {
@@ -28,48 +22,35 @@ function readStore(): Store {
   }
 }
 
-function writeStore(store: Store) {
-  window.localStorage.setItem(KEY, JSON.stringify(store));
+export function getAllAttempts(): Record<string, StoredAttempt> {
+  return readStore().attempts;
+}
+
+export function clearLocalProgress() {
+  if (typeof window === "undefined") return;
+  window.localStorage.removeItem(KEY);
 }
 
 export function loadLocalProgress(today: string): {
   streak: number;
-  attempt: Attempt | null;
+  attempt: (Attempt & { livesLeft?: number }) | null;
 } {
   const store = readStore();
-  const rows = Object.entries(store.attempts).map(([puzzle_date, attempt]) => ({
-    puzzle_date,
-    solved: attempt.solved,
-  }));
   const todayRow = store.attempts[today];
   return {
-    streak: currentStreak(rows, today),
+    streak: computeStats(store.attempts, today).currentStreak,
     attempt: todayRow
       ? {
           completed: todayRow.completed,
           solved: todayRow.solved,
           failed: todayRow.failed,
           results: todayRow.results,
+          livesLeft: todayRow.livesLeft,
         }
       : null,
   };
 }
 
-export function saveLocalAttempt(
-  today: string,
-  attempt: {
-    solved: boolean;
-    failed: boolean;
-    results: PlyResult[];
-  },
-): number {
-  const store = readStore();
-  store.attempts[today] = {
-    solved: attempt.solved,
-    failed: attempt.failed,
-    completed: true,
-    results: attempt.results,
-  };
-  writeStore(store);
-  return loadLocalProgress(today).streak;
+export function getLocalStats(): AccountStats {
+  return computeStats(readStore().attempts, todayUtc());
 }

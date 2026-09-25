@@ -1,12 +1,11 @@
+import { shiftDay } from "./date";
+
 export type AttemptRow = {
   puzzle_date: string;
   solved: boolean;
 };
 
-export function currentStreak(
-  attempts: AttemptRow[],
-  today: string,
-): number {
+export function currentStreak(attempts: AttemptRow[], today: string): number {
   const solvedDays = new Set(
     attempts.filter((attempt) => attempt.solved).map((attempt) => attempt.puzzle_date),
   );
@@ -24,8 +23,18 @@ export function currentStreak(
   return streak;
 }
 
-function shiftDay(isoDate: string, delta: number): string {
-  const date = new Date(`${isoDate}T00:00:00Z`);
-  date.setUTCDate(date.getUTCDate() + delta);
-  return date.toISOString().slice(0, 10);
+export function longestStreak(attempts: AttemptRow[]): number {
+  const days = [
+    ...new Set(attempts.filter((attempt) => attempt.solved).map((attempt) => attempt.puzzle_date)),
+  ].sort();
+
+  let best = 0;
+  let run = 0;
+  let previous: string | null = null;
+  for (const day of days) {
+    run = previous && shiftDay(previous, 1) === day ? run + 1 : 1;
+    best = Math.max(best, run);
+    previous = day;
+  }
+  return best;
 }

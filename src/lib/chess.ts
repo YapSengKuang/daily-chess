@@ -18,6 +18,7 @@ export type Attempt = {
   solved?: boolean;
   failed?: boolean;
   results?: Array<"correct" | "retry" | "miss" | "empty">;
+  livesLeft?: number;
 };
 
 export function playerMoveCount(moves: string[]): number {
