@@ -294,6 +294,15 @@ a {
   margin: 8px 0 0;
 }
 
+.about-copy {
+  display: grid;
+  gap: 1em;
+}
+
+.about-copy p {
+  margin: 0;
+}
+
 .about-links {
   display: grid;
   gap: 10px;
