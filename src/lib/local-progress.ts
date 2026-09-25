@@ -6,6 +6,7 @@ import type { PlyResult } from "./share";
 export type { AccountStats as LocalStats, StoredAttempt };
 
 const KEY = "daily-chess-progress";
+const OWNER_KEY = "daily-chess-progress-owner";
 
 type Store = {
   attempts: Record<string, StoredAttempt>;
@@ -29,6 +30,23 @@ function writeStore(store: Store) {
 
 export function replaceLocalAttempts(attempts: Record<string, StoredAttempt>) {
   writeStore({ attempts });
+}
+
+export function getProgressOwner(): string | null {
+  if (typeof window === "undefined") return null;
+  return window.localStorage.getItem(OWNER_KEY);
+}
+
+export function setProgressOwner(uid: string | null) {
+  if (typeof window === "undefined") return;
+  if (uid) window.localStorage.setItem(OWNER_KEY, uid);
+  else window.localStorage.removeItem(OWNER_KEY);
+}
+
+export function clearLocalProgress() {
+  if (typeof window === "undefined") return;
+  window.localStorage.removeItem(KEY);
+  window.localStorage.removeItem(OWNER_KEY);
 }
 
 export function getAllAttempts(): Record<string, StoredAttempt> {

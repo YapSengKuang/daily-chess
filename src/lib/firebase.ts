@@ -14,10 +14,11 @@ import {
   signInWithEmailAndPassword,
   signInWithPopup,
   signOut as firebaseSignOut,
+  updateProfile,
   type Auth,
   type User,
 } from "firebase/auth";
-import { getFirestore, type Firestore } from "firebase/firestore";
+import { doc, getFirestore, setDoc, type Firestore } from "firebase/firestore";
 import { getFirebaseConfig, isFirebaseConfigured } from "./firebase-config";
 
 let app: FirebaseApp | null = null;
@@ -113,6 +114,29 @@ export async function signInWithGoogle() {
   await afterAccountChange();
 }
 
+export function accountLabel(user: User | null | undefined) {
+  if (!user || user.isAnonymous) return "Guest";
+  return user.displayName?.trim() || user.email || "Signed in";
+}
+
+export async function saveUsername(username: string) {
+  const value = username.trim();
+  if (value.length < 2) throw new Error("Username must be at least 2 characters.");
+  const firebaseAuth = getFirebaseAuth();
+  const user = firebaseAuth?.currentUser;
+  if (!user) throw new Error("Sign in first, then choose a username.");
+  await updateProfile(user, { displayName: value });
+  const db = getFirebaseDb();
+  if (db) {
+    await setDoc(
+      doc(db, "users", user.uid),
+      { username: value, email: user.email ?? null, updatedAt: new Date().toISOString() },
+      { merge: true },
+    );
+  }
+  await user.reload();
+}
+
 export async function signInWithEmail(email: string, password: string) {
   const firebaseAuth = getFirebaseAuth();
   if (!firebaseAuth) throw new Error("Firebase is not configured");
@@ -121,7 +145,7 @@ export async function signInWithEmail(email: string, password: string) {
   await afterAccountChange();
 }
 
-export async function createEmailAccount(email: string, password: string) {
+export async function createEmailAccount(email: string, password: string, username: string) {
   const firebaseAuth = getFirebaseAuth();
   if (!firebaseAuth) throw new Error("Firebase is not configured");
   await firebaseAuth.authStateReady();
@@ -129,6 +153,7 @@ export async function createEmailAccount(email: string, password: string) {
   if (current?.isAnonymous) {
     try {
       await linkWithCredential(current, EmailAuthProvider.credential(email, password));
+      await saveUsername(username);
       await afterAccountChange();
       return;
     } catch (error) {
@@ -138,7 +163,9 @@ export async function createEmailAccount(email: string, password: string) {
       }
     }
   }
-  await createUserWithEmailAndPassword(firebaseAuth, email, password);
+  const created = await createUserWithEmailAndPassword(firebaseAuth, email, password);
+  await updateProfile(created.user, { displayName: username.trim() });
+  await saveUsername(username);
   await afterAccountChange();
 }
 
