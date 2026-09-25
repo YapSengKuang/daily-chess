@@ -11,6 +11,7 @@ import {
   setProgressOwner,
   type StoredAttempt,
 } from "./local-progress";
+import { isIsoDate } from "./date";
 import { parseStoredAttempt } from "./progress-types";
 import type { PlyResult } from "./share";
 
@@ -34,13 +35,16 @@ async function fetchRemoteAttempts(uid: string): Promise<Record<string, StoredAt
 
 async function writeRemoteAttempt(uid: string, date: string, attempt: StoredAttempt) {
   const db = getFirebaseDb();
-  if (!db) return;
+  if (!db || !isIsoDate(date)) return;
+  const parsed = parseStoredAttempt(attempt);
+  if (!parsed) return;
   await setDoc(doc(db, "users", uid, "attempts", date), {
-    solved: attempt.solved,
-    failed: attempt.failed,
-    completed: attempt.completed,
-    results: attempt.results,
-    livesLeft: attempt.livesLeft ?? null,
+    solved: parsed.solved,
+    failed: parsed.failed,
+    completed: parsed.completed,
+    results: parsed.results.slice(0, 8),
+    livesLeft:
+      typeof parsed.livesLeft === "number" ? Math.min(3, Math.max(0, Math.round(parsed.livesLeft))) : null,
     updatedAt: new Date().toISOString(),
   });
 }

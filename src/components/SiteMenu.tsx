@@ -40,6 +40,62 @@ function GuestIcon() {
   );
 }
 
+function SunIcon() {
+  return (
+    <svg className="setting-icon" viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="12" cy="12" r="4" fill="currentColor" />
+      <path
+        d="M12 3v2.2M12 18.8V21M4.9 4.9l1.6 1.6M17.5 17.5l1.6 1.6M3 12h2.2M18.8 12H21M4.9 19.1l1.6-1.6M17.5 6.5l1.6-1.6"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+function MoonIcon() {
+  return (
+    <svg className="setting-icon" viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        d="M16.2 13.4A6.4 6.4 0 0 1 10.6 5a6.6 6.6 0 1 0 5.6 8.4Z"
+        fill="currentColor"
+      />
+    </svg>
+  );
+}
+
+function SoundOnIcon() {
+  return (
+    <svg className="setting-icon" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M4 9.5h3.2L12 5.8v12.4L7.2 14.5H4z" fill="currentColor" />
+      <path
+        d="M15.4 9.2a4.2 4.2 0 0 1 0 5.6M17.8 7a7 7 0 0 1 0 10"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+function SoundOffIcon() {
+  return (
+    <svg className="setting-icon" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M4 9.5h3.2L12 5.8v12.4L7.2 14.5H4z" fill="currentColor" />
+      <path
+        d="M16 9.5 21 14.5M21 9.5 16 14.5"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
 function linkActive(pathname: string, href: string) {
   if (href === "/archive") return pathname === "/archive" || pathname.startsWith("/p/");
   if (href === "/random") return pathname === "/random" || pathname === "/practice";
@@ -88,7 +144,11 @@ export function SiteMenu() {
       setPassword("");
       setConfirm("");
       setPanel("menu");
-      setUser(await getCurrentUser());
+      const nextUser = await getCurrentUser();
+      setUser(nextUser);
+      if (nextUser && !nextUser.isAnonymous) {
+        setOpen(false);
+      }
     } catch (cause) {
       setError(authErrorMessage(cause));
     } finally {
@@ -185,6 +245,7 @@ export function SiteMenu() {
                     value={username}
                     onChange={(event) => setUsername(event.target.value)}
                     minLength={2}
+                    maxLength={32}
                     required
                   />
                   <button className="btn" type="submit" disabled={busy}>
@@ -208,28 +269,58 @@ export function SiteMenu() {
 
               <div className="menu-settings">
                 <p className="menu-heading">Settings</p>
-                <button
-                  className="icon-btn"
-                  type="button"
-                  onClick={() => {
-                    const next = theme === "dark" ? "light" : "dark";
-                    setTheme(next);
-                    setStoredTheme(next);
-                  }}
-                >
-                  {theme === "dark" ? "Dark mode" : "Light mode"}
-                </button>
-                <button
-                  className="icon-btn"
-                  type="button"
-                  onClick={() => {
-                    const next = !sound;
-                    setSound(next);
-                    setSoundEnabled(next);
-                  }}
-                >
-                  {sound ? "Sound on" : "Sound off"}
-                </button>
+                <div className="setting-pair" role="group" aria-label="Theme">
+                  <button
+                    className={theme === "light" ? "setting-btn active" : "setting-btn"}
+                    type="button"
+                    aria-label="Light mode"
+                    aria-pressed={theme === "light"}
+                    onClick={() => {
+                      setTheme("light");
+                      setStoredTheme("light");
+                    }}
+                  >
+                    <SunIcon />
+                  </button>
+                  <button
+                    className={theme === "dark" ? "setting-btn active" : "setting-btn"}
+                    type="button"
+                    aria-label="Dark mode"
+                    aria-pressed={theme === "dark"}
+                    onClick={() => {
+                      setTheme("dark");
+                      setStoredTheme("dark");
+                    }}
+                  >
+                    <MoonIcon />
+                  </button>
+                </div>
+                <div className="setting-pair" role="group" aria-label="Sound">
+                  <button
+                    className={sound ? "setting-btn active" : "setting-btn"}
+                    type="button"
+                    aria-label="Sound on"
+                    aria-pressed={sound}
+                    onClick={() => {
+                      setSound(true);
+                      setSoundEnabled(true);
+                    }}
+                  >
+                    <SoundOnIcon />
+                  </button>
+                  <button
+                    className={!sound ? "setting-btn active" : "setting-btn"}
+                    type="button"
+                    aria-label="Sound off"
+                    aria-pressed={!sound}
+                    onClick={() => {
+                      setSound(false);
+                      setSoundEnabled(false);
+                    }}
+                  >
+                    <SoundOffIcon />
+                  </button>
+                </div>
               </div>
             </>
           ) : (
@@ -259,6 +350,7 @@ export function SiteMenu() {
                     value={username}
                     onChange={(event) => setUsername(event.target.value)}
                     minLength={2}
+                    maxLength={32}
                     required
                   />
                 ) : null}

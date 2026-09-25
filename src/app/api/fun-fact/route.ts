@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { todayUtc } from "@/lib/date";
+import { allowRequest, clientKey } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
@@ -25,13 +26,19 @@ async function fetchUselessFact() {
   if (!response.ok) throw new Error("fact api failed");
   const body = (await response.json()) as { text?: string };
   if (!body.text) throw new Error("empty fact");
-  return body.text.trim();
+  return body.text.trim().slice(0, 500);
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   const today = todayUtc();
   if (cache?.date === today) {
-    return NextResponse.json(cache);
+    return NextResponse.json(cache, {
+      headers: { "Cache-Control": "public, s-maxage=3600" },
+    });
+  }
+
+  if (!allowRequest(`fact:${clientKey(request)}`, 60, 60 * 1000)) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
   }
 
   try {

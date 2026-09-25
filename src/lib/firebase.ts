@@ -20,6 +20,7 @@ import {
 } from "firebase/auth";
 import { doc, getFirestore, setDoc, type Firestore } from "firebase/firestore";
 import { getFirebaseConfig, isFirebaseConfigured } from "./firebase-config";
+import { normalizeUsername } from "./username";
 
 let app: FirebaseApp | null = null;
 let auth: Auth | null = null;
@@ -120,19 +121,18 @@ export function accountLabel(user: User | null | undefined) {
 }
 
 export async function saveUsername(username: string) {
-  const value = username.trim();
-  if (value.length < 2) throw new Error("Username must be at least 2 characters.");
+  const value = normalizeUsername(username);
+  if (!value) throw new Error("Username must be 2–32 characters and cannot include < or >.");
   const firebaseAuth = getFirebaseAuth();
   const user = firebaseAuth?.currentUser;
-  if (!user) throw new Error("Sign in first, then choose a username.");
+  if (!user || user.isAnonymous) throw new Error("Sign in first, then choose a username.");
   await updateProfile(user, { displayName: value });
   const db = getFirebaseDb();
   if (db) {
-    await setDoc(
-      doc(db, "users", user.uid),
-      { username: value, email: user.email ?? null, updatedAt: new Date().toISOString() },
-      { merge: true },
-    );
+    await setDoc(doc(db, "users", user.uid), {
+      username: value,
+      updatedAt: new Date().toISOString(),
+    });
   }
   await user.reload();
 }

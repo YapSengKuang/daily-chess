@@ -1,10 +1,111 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: Firebase Auth uid
+    // Fields:
+    //   - username: string (required, 2-32 chars, no < > or newlines)
+    //   - updatedAt: string (required, ISO-8601-ish, max 40 chars)
+    // Owner-only. No email or roles stored here.
+    //
+    // Collection: users/{userId}/attempts
+    // Document ID: UTC date YYYY-MM-DD
+    // Fields:
+    //   - solved, failed, completed: bool (required)
+    //   - results: list of strings (required, max 8 items, each max 16 chars)
+    //   - livesLeft: number or null (optional, 0-3)
+    //   - updatedAt: string (required, max 40 chars)
+    // Owner-only. Players can only write their own stats.
+    //
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+
+    function isAuthenticated() {
+      return request.auth != null
+        && request.auth.uid != null
+        && request.auth.token.firebase.sign_in_provider != 'anonymous';
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    function validStringLength(field, minLen, maxLen) {
+      return request.resource.data[field] is string
+        && request.resource.data[field].size() >= minLen
+        && request.resource.data[field].size() <= maxLen;
+    }
+
+    function isValidUsername(name) {
+      return name is string
+        && name.size() >= 2
+        && name.size() <= 32
+        && !name.matches('.*[<>\\n\\r].*');
+    }
+
+    function isValidUser(data) {
+      return hasOnlyAllowedFields(['username', 'updatedAt'])
+        && isValidUsername(data.username)
+        && validStringLength('updatedAt', 10, 40);
+    }
+
+    function isValidAttemptId(date) {
+      return date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');
+    }
+
+    function isValidResultItem(results, index) {
+      return results.size() <= index
+        || (results[index] is string && results[index].size() <= 16);
+    }
+
+    function isValidResults(results) {
+      return results is list
+        && results.size() <= 8
+        && isValidResultItem(results, 0)
+        && isValidResultItem(results, 1)
+        && isValidResultItem(results, 2)
+        && isValidResultItem(results, 3)
+        && isValidResultItem(results, 4)
+        && isValidResultItem(results, 5)
+        && isValidResultItem(results, 6)
+        && isValidResultItem(results, 7);
+    }
+
+    function isValidLivesLeft(value) {
+      return value == null
+        || (value is number && value >= 0 && value <= 3);
+    }
+
+    function isValidAttempt(data) {
+      return hasOnlyAllowedFields(['solved', 'failed', 'completed', 'results', 'livesLeft', 'updatedAt'])
+        && data.solved is bool
+        && data.failed is bool
+        && data.completed is bool
+        && isValidResults(data.results)
+        && isValidLivesLeft(data.livesLeft)
+        && validStringLength('updatedAt', 10, 40);
+    }
+
     match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read: if isOwner(userId);
+      allow create, update: if isOwner(userId) && isValidUser(request.resource.data);
+      allow delete: if isOwner(userId);
+
       match /attempts/{date} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
+        allow read: if isOwner(userId);
+        allow create, update: if isOwner(userId)
+          && isValidAttemptId(date)
+          && isValidAttempt(request.resource.data);
+        allow delete: if isOwner(userId);
       }
     }
   }

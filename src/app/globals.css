@@ -168,11 +168,38 @@ a {
   color: var(--muted);
 }
 
-.menu-nav .nav-link,
-.menu-settings .icon-btn {
+.menu-nav .nav-link {
   width: 100%;
   text-align: left;
   justify-content: flex-start;
+}
+
+.setting-pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.setting-btn {
+  display: grid;
+  place-items: center;
+  height: 44px;
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.setting-btn.active {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-color: var(--accent);
+}
+
+.setting-icon {
+  width: 22px;
+  height: 22px;
 }
 
 .auth-panel.nested {
