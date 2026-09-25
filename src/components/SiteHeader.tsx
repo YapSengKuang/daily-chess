@@ -2,14 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { AuthControls } from "./AuthControls";
 import { Countdown } from "./Countdown";
 import { PreferenceToggles } from "./PreferenceToggles";
 
 const LINKS = [
   { href: "/", label: "Today" },
   { href: "/archive", label: "Archive" },
-  { href: "/practice", label: "Practice" },
+  { href: "/random", label: "Random" },
   { href: "/stats", label: "Stats" },
 ];
 
@@ -30,20 +29,21 @@ export function SiteHeader() {
             <Link
               key={link.href}
               href={link.href}
-            className={
-              (link.href === "/archive"
-                ? pathname === "/archive" || pathname.startsWith("/p/")
-                : pathname === link.href)
-                ? "nav-link active"
-                : "nav-link"
-            }
+              className={
+                (link.href === "/archive"
+                  ? pathname === "/archive" || pathname.startsWith("/p/")
+                  : link.href === "/random"
+                    ? pathname === "/random" || pathname === "/practice"
+                    : pathname === link.href)
+                  ? "nav-link active"
+                  : "nav-link"
+              }
             >
               {link.label}
             </Link>
           ))}
         </nav>
         <PreferenceToggles />
-        <AuthControls />
       </div>
     </header>
   );

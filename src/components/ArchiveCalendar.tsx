@@ -1,9 +1,9 @@
 "use client";
 
 import { daysInUtcMonth, isIsoDate, monthKey, puzzleNumber, todayUtc } from "@/lib/date";
-import { useAccountProgress } from "@/lib/use-account-progress";
+import { getAllAttempts, type StoredAttempt } from "@/lib/local-progress";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 function parseMonth(value: string): { year: number; month: number } {
   const [year, month] = value.split("-").map(Number);
@@ -15,8 +15,11 @@ export function ArchiveCalendar({ initialMonth }: { initialMonth: string }) {
   const minMonth = "2026-01";
   const maxMonth = monthKey(today);
   const [month, setMonth] = useState(initialMonth);
-  const { signedIn, progress } = useAccountProgress();
-  const attempts = progress?.attempts ?? {};
+  const [attempts, setAttempts] = useState<Record<string, StoredAttempt>>({});
+
+  useEffect(() => {
+    setAttempts(getAllAttempts());
+  }, [month]);
 
   const cells = useMemo(() => {
     const { year, month: monthIndex } = parseMonth(month);
@@ -50,10 +53,8 @@ export function ArchiveCalendar({ initialMonth }: { initialMonth: string }) {
         </button>
       </div>
       <p className="muted">
-        Past days stay open. Future days stay locked. Today resets at 00:00 UTC.
-        {signedIn
-          ? " Checkmarks come from your account."
-          : " Sign in to save and see your results on the calendar."}
+        Past days stay open. Future days stay locked. Today resets at 00:00 UTC. Results are stored
+        in this browser.
       </p>
       <div className="calendar-weekdays">
         {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (

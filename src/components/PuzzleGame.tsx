@@ -1,19 +1,17 @@
 "use client";
 
 import { Chess, type Square } from "chess.js";
-import { signIn, useSession } from "next-auth/react";
-import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { Chessboard } from "react-chessboard";
 import { uciToMove, type DailyPuzzle } from "@/lib/chess";
-import { useAccountProgress } from "@/lib/use-account-progress";
+import { loadLocalProgress, saveLocalAttempt } from "@/lib/local-progress";
 import { themeSummary } from "@/lib/puzzles";
 import { playSound } from "@/lib/settings";
 import { buildShareText, shareResult, type PlyResult } from "@/lib/share";
 
 const LIVES = 3;
 
-type Mode = "daily" | "archive" | "practice";
+type Mode = "daily" | "archive" | "practice" | "random";
 
 function emptyResults(count: number): PlyResult[] {
   return Array.from({ length: count }, () => "empty");
@@ -26,10 +24,7 @@ export function PuzzleGame({
   puzzle: DailyPuzzle;
   mode?: Mode;
 }) {
-  const persist = mode !== "practice";
-  const pathname = usePathname();
-  const { status } = useSession();
-  const { signedIn, progress, error, reload } = useAccountProgress();
+  const persist = mode === "daily" || mode === "archive";
   const chessRef = useRef(new Chess(puzzle.fen));
   const [fen, setFen] = useState(puzzle.fen);
   const [ply, setPly] = useState(0);
@@ -49,19 +44,8 @@ export function PuzzleGame({
   const [waiting, setWaiting] = useState(false);
   const [completed, setCompleted] = useState(false);
   const [replaying, setReplaying] = useState(false);
-  const [saveError, setSaveError] = useState("");
   const replayTimer = useRef<number | null>(null);
-  const needsAuth = persist && status !== "loading" && !signedIn;
-  const loadingAccount = persist && (status === "loading" || (signedIn && !progress && !error));
-  const blocked = persist && Boolean(error);
-  const locked =
-    needsAuth ||
-    loadingAccount ||
-    blocked ||
-    statusPlay !== "play" ||
-    waiting ||
-    completed ||
-    replaying;
+  const locked = statusPlay !== "play" || waiting || completed || replaying;
   const playerIndex = Math.floor(ply / 2);
   const expected = puzzle.moves[ply];
   const expectedMove = expected ? uciToMove(expected) : null;
@@ -77,6 +61,15 @@ export function PuzzleGame({
       setSelected(null);
       setHintLevel(0);
       setMessage(solved ? "Solved. Nice find." : "Out of lives. The solution is below.");
+      const nextStreak = persist
+        ? saveLocalAttempt(puzzle.date, {
+            solved,
+            failed: !solved,
+            results: nextResults,
+            livesLeft,
+          })
+        : streak;
+      if (persist) setStreak(nextStreak);
       setShareText(
         buildShareText({
           date: puzzle.date,
@@ -84,42 +77,9 @@ export function PuzzleGame({
           solved,
           playerMoves: puzzle.playerMoves,
           results: nextResults,
-          streak,
+          streak: nextStreak,
         }),
       );
-      if (!persist) return;
-      void (async () => {
-        const response = await fetch("/api/attempt", {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            date: puzzle.date,
-            solved,
-            failed: !solved,
-            results: nextResults,
-            livesLeft,
-          }),
-        });
-        const body = (await response.json()) as { streak?: number; error?: string };
-        if (!response.ok) {
-          setSaveError(body.error ?? "Could not save this attempt.");
-          return;
-        }
-        setSaveError("");
-        if (typeof body.streak === "number") {
-          setStreak(body.streak);
-          setShareText(
-            buildShareText({
-              date: puzzle.date,
-              number: puzzle.number,
-              solved,
-              playerMoves: puzzle.playerMoves,
-              results: nextResults,
-              streak: body.streak,
-            }),
-          );
-        }
-      })();
     },
     [persist, puzzle, streak],
   );
@@ -244,15 +204,15 @@ export function PuzzleGame({
     setWaiting(false);
     setCompleted(false);
     setReplaying(false);
-    setSaveError("");
-    setStreak(0);
-  }, [puzzle]);
 
-  useEffect(() => {
-    setStreak(progress?.streak ?? 0);
-    if (!persist || !progress) return;
-    const attempt = progress.attempts[puzzle.date];
-    if (!attempt?.completed) return;
+    if (!persist) {
+      setStreak(loadLocalProgress(puzzle.date).streak);
+      return;
+    }
+
+    const progress = loadLocalProgress(puzzle.date);
+    setStreak(progress.streak);
+    if (!progress.attempt?.completed) return;
 
     const replay = new Chess(puzzle.fen);
     let last: { from: string; to: string } | null = null;
@@ -264,25 +224,27 @@ export function PuzzleGame({
     setFen(replay.fen());
     setLastMove(last);
     setCompleted(true);
-    setStatusPlay(attempt.solved ? "won" : "lost");
-    setLives(attempt.livesLeft ?? 0);
+    setStatusPlay(progress.attempt.solved ? "won" : "lost");
+    setLives(progress.attempt.livesLeft ?? 0);
     setResults(
-      attempt.results?.length === puzzle.playerMoves
-        ? attempt.results
+      progress.attempt.results?.length === puzzle.playerMoves
+        ? progress.attempt.results
         : emptyResults(puzzle.playerMoves),
     );
-    setMessage(attempt.solved ? "Solved. Nice find." : "Out of lives. The solution is below.");
+    setMessage(
+      progress.attempt.solved ? "Solved. Nice find." : "Out of lives. The solution is below.",
+    );
     setShareText(
       buildShareText({
         date: puzzle.date,
         number: puzzle.number,
-        solved: Boolean(attempt.solved),
+        solved: Boolean(progress.attempt.solved),
         playerMoves: puzzle.playerMoves,
-        results: attempt.results ?? emptyResults(puzzle.playerMoves),
+        results: progress.attempt.results ?? emptyResults(puzzle.playerMoves),
         streak: progress.streak,
       }),
     );
-  }, [persist, progress, puzzle]);
+  }, [persist, puzzle]);
 
   const replaySolution = useCallback(() => {
     if (replayTimer.current) window.clearTimeout(replayTimer.current);
@@ -352,8 +314,8 @@ export function PuzzleGame({
   }, [expectedMove, hintLevel, lastMove, legalTargets, selected, statusPlay]);
 
   const title =
-    mode === "practice"
-      ? "Practice"
+    mode === "practice" || mode === "random"
+      ? "Random"
       : mode === "archive"
         ? `Puzzle ${puzzle.number}`
         : "Today's puzzle";
@@ -408,31 +370,8 @@ export function PuzzleGame({
         </p>
         <h2>{title}</h2>
         <p className="themes">{themeSummary(puzzle.themes)}</p>
-        {needsAuth ? (
-          <div className="auth-gate">
-            <p>Sign in with Google to play this puzzle and keep your streak on your account.</p>
-            <button
-              className="btn"
-              type="button"
-              onClick={() => signIn("google", { callbackUrl: pathname || "/" })}
-            >
-              Sign in with Google
-            </button>
-          </div>
-        ) : loadingAccount ? (
-          <p className="muted">{status === "loading" ? "Checking sign-in…" : "Loading your progress…"}</p>
-        ) : blocked ? (
-          <div className="auth-gate">
-            <p>{error}</p>
-            <button className="btn" type="button" onClick={() => void reload()}>
-              Retry
-            </button>
-          </div>
-        ) : (
-          <>
-            <p>{message}</p>
-            {saveError ? <p className="muted">{saveError}</p> : null}
-            <div className="meta">
+        <p>{message}</p>
+        <div className="meta">
               <span>
                 Lives {"♥".repeat(Math.max(lives, 0))}
                 {"♡".repeat(Math.max(LIVES - lives, 0))}
@@ -487,15 +426,13 @@ export function PuzzleGame({
                 </div>
                 {mode === "daily" && (
                   <p className="muted">
-                    <a href="/practice">Keep going in practice</a>
+                    <a href="/random">Keep going with a random puzzle</a>
                     {" · "}
                     <a href="/archive">Browse past days</a>
                   </p>
                 )}
               </>
             )}
-          </>
-        )}
       </div>
     </section>
   );

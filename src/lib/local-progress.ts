@@ -1,6 +1,7 @@
 import type { Attempt } from "./chess";
 import { computeStats, type AccountStats, type StoredAttempt } from "./progress-types";
 import { todayUtc } from "./date";
+import type { PlyResult } from "./share";
 
 export type { AccountStats as LocalStats, StoredAttempt };
 
@@ -22,13 +23,12 @@ function readStore(): Store {
   }
 }
 
-export function getAllAttempts(): Record<string, StoredAttempt> {
-  return readStore().attempts;
+function writeStore(store: Store) {
+  window.localStorage.setItem(KEY, JSON.stringify(store));
 }
 
-export function clearLocalProgress() {
-  if (typeof window === "undefined") return;
-  window.localStorage.removeItem(KEY);
+export function getAllAttempts(): Record<string, StoredAttempt> {
+  return readStore().attempts;
 }
 
 export function loadLocalProgress(today: string): {
@@ -49,6 +49,27 @@ export function loadLocalProgress(today: string): {
         }
       : null,
   };
+}
+
+export function saveLocalAttempt(
+  date: string,
+  attempt: {
+    solved: boolean;
+    failed: boolean;
+    results: PlyResult[];
+    livesLeft: number;
+  },
+): number {
+  const store = readStore();
+  store.attempts[date] = {
+    solved: attempt.solved,
+    failed: attempt.failed,
+    completed: true,
+    results: attempt.results,
+    livesLeft: attempt.livesLeft,
+  };
+  writeStore(store);
+  return loadLocalProgress(date).streak;
 }
 
 export function getLocalStats(): AccountStats {

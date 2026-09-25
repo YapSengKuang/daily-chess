@@ -19,7 +19,7 @@ export function buildShareText(options: {
   const score = options.solved
     ? `${options.playerMoves}/${options.playerMoves}`
     : `X/${options.playerMoves}`;
-  const label = options.number > 0 ? `Daily Chess #${options.number} ${options.date}` : "Daily Chess · Practice";
+  const label = options.number > 0 ? `Daily Chess #${options.number} ${options.date}` : "Daily Chess · Random";
 
   return [`${label}`, `${score}  ${grid}`, `Streak: ${options.streak} 🔥`].join("\n");
 }

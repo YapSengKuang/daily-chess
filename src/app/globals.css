@@ -121,32 +121,6 @@ a {
   border-color: var(--accent);
 }
 
-.account {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-}
-
-.account-name {
-  font-weight: 600;
-  font-size: 14px;
-}
-
-.avatar {
-  width: 28px;
-  height: 28px;
-  border-radius: 999px;
-  object-fit: cover;
-}
-
-.auth-gate {
-  display: grid;
-  gap: 12px;
-  margin-top: 8px;
-}
-
 .toggles {
   display: flex;
   gap: 8px;

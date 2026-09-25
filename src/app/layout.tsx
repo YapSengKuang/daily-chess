@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
 import { Fraunces, Source_Sans_3 } from "next/font/google";
-import { auth } from "@/auth";
-import { Providers } from "@/components/Providers";
 import { SiteHeader } from "@/components/SiteHeader";
 import { siteUrl } from "@/lib/site-url";
 import "./globals.css";
@@ -29,24 +27,21 @@ export const metadata: Metadata = {
 
 const themeScript = `try{var t=localStorage.getItem('daily-chess-theme');if(t==='dark'||t==='light')document.documentElement.dataset.theme=t;else if(window.matchMedia('(prefers-color-scheme: dark)').matches)document.documentElement.dataset.theme='dark';}catch(e){}`;
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const session = await auth().catch(() => null);
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body className={`${display.variable} ${sans.variable}`}>
-        <Providers session={session}>
-          <div className="shell">
-            <SiteHeader />
-            {children}
-          </div>
-        </Providers>
+        <div className="shell">
+          <SiteHeader />
+          {children}
+        </div>
       </body>
     </html>
   );

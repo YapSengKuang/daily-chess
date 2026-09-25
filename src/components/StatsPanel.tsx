@@ -1,59 +1,33 @@
 "use client";
 
-import { signIn } from "next-auth/react";
-import { useAccountProgress } from "@/lib/use-account-progress";
-import { usePathname } from "next/navigation";
+import { getLocalStats, type LocalStats } from "@/lib/local-progress";
+import { useEffect, useState } from "react";
 
 export function StatsPanel() {
-  const pathname = usePathname();
-  const { status, signedIn, progress, error, reload } = useAccountProgress();
+  const [stats, setStats] = useState<LocalStats | null>(null);
 
-  if (status === "loading") {
-    return <p className="muted">Loading stats…</p>;
-  }
+  useEffect(() => {
+    setStats(getLocalStats());
+  }, []);
 
-  if (!signedIn) {
-    return (
-      <section className="panel stats">
-        <h2>Your stats</h2>
-        <p>Sign in with Google to store streak and solves on your account.</p>
-        <button className="btn" type="button" onClick={() => signIn("google", { callbackUrl: pathname })}>
-          Sign in with Google
-        </button>
-      </section>
-    );
-  }
-
-  if (error) {
-    return (
-      <section className="panel stats">
-        <h2>Your stats</h2>
-        <p>{error}</p>
-        <button className="btn" type="button" onClick={() => void reload()}>
-          Retry
-        </button>
-      </section>
-    );
-  }
-
-  if (!progress) {
+  if (!stats) {
     return <p className="muted">Loading stats…</p>;
   }
 
   const items = [
-    ["Current streak", String(progress.stats.currentStreak)],
-    ["Max streak", String(progress.stats.maxStreak)],
-    ["Days played", String(progress.stats.played)],
-    ["Solved", String(progress.stats.solved)],
-    ["Failed", String(progress.stats.failed)],
-    ["Solve rate", `${progress.stats.solveRate}%`],
-    ["Avg lives left", String(progress.stats.avgLivesLeft)],
+    ["Current streak", String(stats.currentStreak)],
+    ["Max streak", String(stats.maxStreak)],
+    ["Days played", String(stats.played)],
+    ["Solved", String(stats.solved)],
+    ["Failed", String(stats.failed)],
+    ["Solve rate", `${stats.solveRate}%`],
+    ["Avg lives left", String(stats.avgLivesLeft)],
   ];
 
   return (
     <section className="panel stats">
       <h2>Your stats</h2>
-      <p className="muted">Saved to your Google account. Same streak on every device.</p>
+      <p className="muted">Kept in this browser only. Clearing site data resets them.</p>
       <dl className="stat-grid">
         {items.map(([label, value]) => (
           <div key={label}>
