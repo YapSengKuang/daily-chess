@@ -4,6 +4,7 @@ import { loadFirebase } from "@/lib/firebase-lazy";
 import { normalizeEmail, passwordIssue } from "@/lib/credentials";
 import { getSoundEnabled, getStoredTheme, setSoundEnabled, setStoredTheme } from "@/lib/settings";
 import type { User } from "firebase/auth";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
@@ -109,6 +110,7 @@ export function SiteMenu() {
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const signedIn = Boolean(user && !user.isAnonymous);
   const needsUsername = signedIn && !user?.displayName?.trim();
+  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
     let unsub = () => {};
@@ -188,11 +190,12 @@ export function SiteMenu() {
 
   return (
     <div className="menu-wrap">
-      <button
+      <motion.button
         className="burger"
         type="button"
         aria-label={open ? "Close menu" : "Open menu"}
         aria-expanded={open}
+        whileTap={reduceMotion ? undefined : { scale: 0.92 }}
         onClick={() => {
           setOpen((value) => !value);
           setPanel("menu");
@@ -202,10 +205,31 @@ export function SiteMenu() {
         <span />
         <span />
         <span />
-      </button>
+      </motion.button>
 
-      {open ? (
-        <div className="menu-panel">
+      <AnimatePresence>
+        {open ? (
+          <motion.div
+            key="menu-panel"
+            className="menu-panel"
+            initial={
+              reduceMotion
+                ? { opacity: 0 }
+                : { opacity: 0, scale: 0.18, x: 18, y: -12 }
+            }
+            animate={reduceMotion ? { opacity: 1 } : { opacity: 1, scale: 1, x: 0, y: 0 }}
+            exit={
+              reduceMotion
+                ? { opacity: 0 }
+                : { opacity: 0, scale: 0.18, x: 18, y: -12 }
+            }
+            transition={
+              reduceMotion
+                ? { duration: 0.12 }
+                : { type: "spring", stiffness: 420, damping: 28, mass: 0.7 }
+            }
+            style={{ transformOrigin: "top right" }}
+          >
           {panel === "menu" ? (
             <>
               <div className="menu-account">
@@ -416,8 +440,9 @@ export function SiteMenu() {
               {error ? <p className="muted">{error}</p> : null}
             </div>
           )}
-        </div>
-      ) : null}
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
     </div>
   );
 }
