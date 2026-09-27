@@ -20,6 +20,7 @@ import {
 } from "firebase/auth";
 import { doc, getFirestore, setDoc, type Firestore } from "firebase/firestore";
 import { getFirebaseConfig, isFirebaseConfigured } from "./firebase-config";
+import { normalizeEmail, passwordIssue } from "./credentials";
 import { normalizeUsername } from "./username";
 
 let app: FirebaseApp | null = null;
@@ -78,7 +79,7 @@ export function authErrorMessage(error: unknown) {
   if (code.includes("invalid-credential") || code.includes("wrong-password") || code.includes("user-not-found")) {
     return "Email or password is incorrect.";
   }
-  if (code.includes("weak-password")) return "Password must be at least 6 characters.";
+  if (code.includes("weak-password")) return "Password must be at least 8 characters.";
   if (code.includes("invalid-email")) return "Enter a valid email address.";
   if (code.includes("too-many-requests")) return "Too many attempts. Try again later.";
   return error instanceof Error ? error.message : "Could not sign in.";
@@ -137,21 +138,29 @@ export async function saveUsername(username: string) {
 }
 
 export async function signInWithEmail(email: string, password: string) {
+  const normalizedEmail = normalizeEmail(email);
+  if (!normalizedEmail) throw new Error("Enter a valid email address.");
+  const issue = passwordIssue(password, "signin");
+  if (issue) throw new Error(issue);
   const firebaseAuth = getFirebaseAuth();
   if (!firebaseAuth) throw new Error("Firebase is not configured");
   await firebaseAuth.authStateReady();
-  await signInWithEmailAndPassword(firebaseAuth, email, password);
+  await signInWithEmailAndPassword(firebaseAuth, normalizedEmail, password);
   await afterAccountChange();
 }
 
 export async function createEmailAccount(email: string, password: string, username: string) {
+  const normalizedEmail = normalizeEmail(email);
+  if (!normalizedEmail) throw new Error("Enter a valid email address.");
+  const issue = passwordIssue(password, "create");
+  if (issue) throw new Error(issue);
   const firebaseAuth = getFirebaseAuth();
   if (!firebaseAuth) throw new Error("Firebase is not configured");
   await firebaseAuth.authStateReady();
   const current = firebaseAuth.currentUser;
   if (current?.isAnonymous) {
     try {
-      await linkWithCredential(current, EmailAuthProvider.credential(email, password));
+      await linkWithCredential(current, EmailAuthProvider.credential(normalizedEmail, password));
       await saveUsername(username);
       await afterAccountChange();
       return;
@@ -162,7 +171,7 @@ export async function createEmailAccount(email: string, password: string, userna
       }
     }
   }
-  const created = await createUserWithEmailAndPassword(firebaseAuth, email, password);
+  const created = await createUserWithEmailAndPassword(firebaseAuth, normalizedEmail, password);
   await updateProfile(created.user, { displayName: username.trim() });
   await saveUsername(username);
   await afterAccountChange();

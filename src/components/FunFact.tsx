@@ -9,11 +9,19 @@ export function FunFact() {
   useEffect(() => {
     let cancelled = false;
     void fetch("/api/fun-fact")
-      .then((response) => response.json())
-      .then((body: { text?: string; source?: string }) => {
-        if (cancelled || !body.text) return;
-        setText(body.text);
-        setSource(body.source ?? "");
+      .then(async (response) => {
+        const body = (await response.json()) as { text?: string; source?: string; error?: string };
+        if (cancelled) return;
+        if (body.text) {
+          setText(body.text);
+          setSource(body.source ?? "");
+          return;
+        }
+        setText(
+          response.status === 429
+            ? "Too many requests for today's fun fact. Try again in a minute."
+            : "Could not load today's fun fact.",
+        );
       })
       .catch(() => {
         if (!cancelled) setText("Could not load today's fun fact.");

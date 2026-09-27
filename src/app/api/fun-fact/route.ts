@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { todayUtc } from "@/lib/date";
-import { allowRequest, clientKey } from "@/lib/rate-limit";
+import { checkLimit, clientKey, limitHeaders } from "@/lib/rate-limit";
 
 export const revalidate = 3600;
 
@@ -37,8 +37,12 @@ export async function GET(request: Request) {
     });
   }
 
-  if (!allowRequest(`fact:${clientKey(request)}`, 60, 60 * 1000)) {
-    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  const limited = checkLimit(`fact:${clientKey(request)}`, 60, 60 * 1000);
+  if (!limited.allowed) {
+    return NextResponse.json(
+      { error: "Too many requests" },
+      { status: 429, headers: limitHeaders(limited) },
+    );
   }
 
   try {
@@ -50,6 +54,9 @@ export async function GET(request: Request) {
   }
 
   return NextResponse.json(cache, {
-    headers: { "Cache-Control": "public, s-maxage=3600" },
+    headers: {
+      "Cache-Control": "public, s-maxage=3600",
+      ...limitHeaders({ ...limited, allowed: true }),
+    },
   });
 }

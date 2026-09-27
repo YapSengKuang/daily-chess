@@ -1,6 +1,7 @@
 "use client";
 
 import { loadFirebase } from "@/lib/firebase-lazy";
+import { normalizeEmail, passwordIssue } from "@/lib/credentials";
 import { getSoundEnabled, getStoredTheme, setSoundEnabled, setStoredTheme } from "@/lib/settings";
 import type { User } from "firebase/auth";
 import Link from "next/link";
@@ -164,19 +165,25 @@ export function SiteMenu() {
 
   function submitAuth(event: FormEvent) {
     event.preventDefault();
-    if (mode === "create") {
-      if (password !== confirm) {
-        setError("Passwords do not match.");
-        return;
-      }
-      void run((api) => api.createEmailAccount(email, password, username));
+    const cleanEmail = normalizeEmail(email);
+    if (!cleanEmail) {
+      setError("Enter a valid email address.");
+      return;
+    }
+    const issue = passwordIssue(password, mode);
+    if (issue) {
+      setError(issue);
       return;
     }
     if (password !== confirm) {
       setError("Passwords do not match.");
       return;
     }
-    void run((api) => api.signInWithEmail(email, password));
+    if (mode === "create") {
+      void run((api) => api.createEmailAccount(cleanEmail, password, username));
+      return;
+    }
+    void run((api) => api.signInWithEmail(cleanEmail, password));
   }
 
   return (
@@ -363,18 +370,23 @@ export function SiteMenu() {
                 <input
                   type="email"
                   autoComplete="email"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
                   placeholder="Email"
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
+                  maxLength={254}
                   required
                 />
                 <input
                   type="password"
                   autoComplete={mode === "create" ? "new-password" : "current-password"}
-                  placeholder="Password"
+                  placeholder={mode === "create" ? "Password (8+ characters)" : "Password"}
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
-                  minLength={6}
+                  minLength={mode === "create" ? 8 : 6}
+                  maxLength={128}
                   required
                 />
                 <input
@@ -383,7 +395,8 @@ export function SiteMenu() {
                   placeholder="Confirm password"
                   value={confirm}
                   onChange={(event) => setConfirm(event.target.value)}
-                  minLength={6}
+                  minLength={mode === "create" ? 8 : 6}
+                  maxLength={128}
                   required
                 />
                 <button className="btn" type="submit" disabled={busy}>
