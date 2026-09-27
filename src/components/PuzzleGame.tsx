@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties }
 import { uciToMove, type DailyPuzzle } from "@/lib/chess";
 import { getProgressOwner, loadLocalProgress, saveLocalAttempt } from "@/lib/local-progress";
 import { themeSummary } from "@/lib/themes";
+import { PIXEL_BOARD, PIXEL_PIECES } from "@/lib/pixel-chess";
 import { FunFact } from "./FunFact";
 import { ChessBoardLazy } from "./ChessBoardLazy";
 import { playSound } from "@/lib/settings";
@@ -391,8 +392,8 @@ export function PuzzleGame({
   const squareStyles = useMemo(() => {
     const styles: Record<string, CSSProperties> = {};
     if (lastMove) {
-      styles[lastMove.from] = { backgroundColor: "rgba(47, 93, 80, 0.28)" };
-      styles[lastMove.to] = { backgroundColor: "rgba(47, 93, 80, 0.4)" };
+      styles[lastMove.from] = { backgroundColor: "rgba(201, 162, 39, 0.42)" };
+      styles[lastMove.to] = { backgroundColor: "rgba(201, 162, 39, 0.58)" };
     }
     if (hintLevel >= 1 && expectedMove && statusPlay === "play") {
       styles[expectedMove.from] = { backgroundColor: "rgba(201, 162, 39, 0.45)" };
@@ -407,11 +408,11 @@ export function PuzzleGame({
       const occupied = Boolean(chessRef.current.get(move.to as Square));
       styles[move.to] = occupied
         ? {
-            boxShadow: "inset 0 0 0 3px rgba(47, 93, 80, 0.85)",
+            boxShadow: "inset 0 0 0 3px rgba(30, 61, 52, 0.9)",
             backgroundColor: styles[move.to]?.backgroundColor,
           }
         : {
-            backgroundImage: "radial-gradient(circle, rgba(47, 93, 80, 0.45) 18%, transparent 20%)",
+            backgroundImage: "radial-gradient(circle, rgba(30, 61, 52, 0.55) 18%, transparent 20%)",
             backgroundColor: styles[move.to]?.backgroundColor,
           };
     }
@@ -435,7 +436,13 @@ export function PuzzleGame({
             boardOrientation: puzzle.orientation,
             allowDragging: !locked,
             animationDurationInMs: 220,
-            boardStyle: { width: "100%" },
+            boardStyle: PIXEL_BOARD.boardStyle,
+            lightSquareStyle: PIXEL_BOARD.lightSquareStyle,
+            darkSquareStyle: PIXEL_BOARD.darkSquareStyle,
+            dropSquareStyle: PIXEL_BOARD.dropSquareStyle,
+            darkSquareNotationStyle: PIXEL_BOARD.darkSquareNotationStyle,
+            lightSquareNotationStyle: PIXEL_BOARD.lightSquareNotationStyle,
+            pieces: PIXEL_PIECES,
             squareStyles,
             canDragPiece: ({ piece }) =>
               !locked && piece.pieceType[0] === chessRef.current.turn(),

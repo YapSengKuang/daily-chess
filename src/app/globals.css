@@ -121,8 +121,8 @@ a {
 .burger {
   width: 44px;
   height: 44px;
-  border: 1px solid var(--line);
-  border-radius: 12px;
+  border: 2px solid #1e3d34;
+  border-radius: 4px;
   background: var(--card);
   display: grid;
   place-content: center;
@@ -131,6 +131,13 @@ a {
   padding: 10px;
   position: relative;
   z-index: 21;
+  box-shadow: 4px 4px 0 #1e3d34;
+  transition: transform 80ms ease, box-shadow 80ms ease;
+}
+
+.burger:active {
+  transform: translate(4px, 4px);
+  box-shadow: 0 0 0 #1e3d34;
 }
 
 .burger span {
@@ -187,17 +194,24 @@ a {
   display: grid;
   place-items: center;
   height: 44px;
-  background: transparent;
+  background: var(--card);
   color: var(--muted);
-  border: 1px solid var(--line);
-  border-radius: 12px;
+  border: 2px solid #1e3d34;
+  border-radius: 4px;
   cursor: pointer;
+  box-shadow: 4px 4px 0 #1e3d34;
+  transition: transform 80ms ease, box-shadow 80ms ease;
+}
+
+.setting-btn:active {
+  transform: translate(4px, 4px);
+  box-shadow: 0 0 0 #1e3d34;
 }
 
 .setting-btn.active {
   background: var(--accent);
   color: var(--accent-ink);
-  border-color: var(--accent);
+  border-color: #1e3d34;
 }
 
 .setting-icon {
@@ -221,17 +235,25 @@ a {
 .nav-link {
   color: var(--ink);
   text-decoration: none;
-  border: 1px solid var(--line);
-  border-radius: 999px;
+  border: 2px solid #1e3d34;
+  border-radius: 4px;
   padding: 6px 12px;
   font-weight: 600;
   font-size: 14px;
+  background: var(--card);
+  box-shadow: 4px 4px 0 #1e3d34;
+  transition: transform 80ms ease, box-shadow 80ms ease;
+}
+
+.nav-link:active {
+  transform: translate(4px, 4px);
+  box-shadow: 0 0 0 #1e3d34;
 }
 
 .nav-link.active {
   background: var(--accent);
   color: var(--accent-ink);
-  border-color: var(--accent);
+  border-color: #1e3d34;
 }
 
 .toggles {
@@ -284,29 +306,41 @@ a {
 
 .icon-btn,
 .btn-ghost {
-  background: transparent;
+  background: var(--card);
   color: var(--ink);
-  border: 1px solid var(--line);
-  border-radius: 999px;
+  border: 2px solid #1e3d34;
+  border-radius: 4px;
   padding: 8px 12px;
   font-weight: 600;
   cursor: pointer;
+  box-shadow: 4px 4px 0 #1e3d34;
+  transition: transform 80ms ease, box-shadow 80ms ease;
 }
 
 .btn {
   background: var(--accent);
   color: var(--accent-ink);
-  border: 0;
-  border-radius: 999px;
+  border: 2px solid #1e3d34;
+  border-radius: 4px;
   padding: 10px 16px;
   font-weight: 600;
   cursor: pointer;
+  box-shadow: 4px 4px 0 #1e3d34;
+  transition: transform 80ms ease, box-shadow 80ms ease;
+}
+
+.btn:active:not(:disabled),
+.btn-ghost:active:not(:disabled),
+.icon-btn:active:not(:disabled) {
+  transform: translate(4px, 4px);
+  box-shadow: 0 0 0 #1e3d34;
 }
 
 .btn:disabled,
 .icon-btn:disabled {
   opacity: 0.55;
   cursor: default;
+  box-shadow: 2px 2px 0 #1e3d34;
 }
 
 .game {
@@ -345,11 +379,29 @@ a {
   font-weight: 600;
 }
 
+.about-credits {
+  display: grid;
+  gap: 10px;
+  padding: 0;
+  margin: 12px 0 0;
+  list-style: none;
+}
+
+.about-credits li {
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.about-credits a {
+  font-weight: 600;
+}
+
 .board-wrap {
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: 18px;
-  padding: 10px;
+  background: #2f5d50;
+  border: 4px solid #1e3d34;
+  box-shadow: 6px 6px 0 #1e3d34;
+  border-radius: 6px;
+  padding: 8px;
   width: 100%;
   max-width: 560px;
 }
@@ -472,15 +524,22 @@ textarea {
 
 .cal-cell {
   min-height: 64px;
-  border: 1px solid var(--line);
-  border-radius: 10px;
+  border: 2px solid #1e3d34;
+  border-radius: 4px;
   padding: 8px;
   text-decoration: none;
   color: var(--ink);
   display: flex;
   flex-direction: column;
   gap: 2px;
-  background: color-mix(in srgb, var(--card) 80%, var(--bg));
+  background: var(--card);
+  box-shadow: 4px 4px 0 #1e3d34;
+  transition: transform 80ms ease, box-shadow 80ms ease;
+}
+
+a.cal-cell:active {
+  transform: translate(4px, 4px);
+  box-shadow: 0 0 0 #1e3d34;
 }
 
 .cal-cell small {

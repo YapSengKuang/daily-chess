@@ -195,7 +195,6 @@ export function SiteMenu() {
         type="button"
         aria-label={open ? "Close menu" : "Open menu"}
         aria-expanded={open}
-        whileTap={reduceMotion ? undefined : { scale: 0.92 }}
         onClick={() => {
           setOpen((value) => !value);
           setPanel("menu");
