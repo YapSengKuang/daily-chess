@@ -214,9 +214,16 @@ a {
   border-color: #1e3d34;
 }
 
-.setting-icon {
+.setting-icon,
+.setting-piece-preview {
   width: 22px;
   height: 22px;
+}
+
+.setting-piece-preview {
+  object-fit: contain;
+  image-rendering: pixelated;
+  pointer-events: none;
 }
 
 .auth-panel.nested {
@@ -404,6 +411,14 @@ a {
   padding: 8px;
   width: 100%;
   max-width: 560px;
+}
+
+.board-wrap.classic {
+  background: var(--card);
+  border: 1px solid var(--line);
+  box-shadow: none;
+  border-radius: 18px;
+  padding: 10px;
 }
 
 .board-skeleton {

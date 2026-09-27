@@ -2,7 +2,15 @@
 
 import { loadFirebase } from "@/lib/firebase-lazy";
 import { normalizeEmail, passwordIssue } from "@/lib/credentials";
-import { getSoundEnabled, getStoredTheme, setSoundEnabled, setStoredTheme } from "@/lib/settings";
+import {
+  getBoardStyle,
+  getSoundEnabled,
+  getStoredTheme,
+  setBoardStyle,
+  setSoundEnabled,
+  setStoredTheme,
+  type BoardStyle,
+} from "@/lib/settings";
 import type { User } from "firebase/auth";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import Link from "next/link";
@@ -88,6 +96,17 @@ function SoundOffIcon() {
   );
 }
 
+function ClassicKnightIcon() {
+  return (
+    <svg className="setting-icon" viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        d="M7.5 20h9M8 18h8l-.4-2.2c.8-.6 1.9-1.8 1.9-3.3 0-2.2-1.5-3.2-3-4.1.4-1.2.3-2.6-.7-3.6-1.4.2-2.6.9-3.4 2.1C9.6 6.4 8 7.2 7.2 9.1 6.2 11.4 6.8 13.6 8.4 15.2L8 18Z"
+        fill="currentColor"
+      />
+    </svg>
+  );
+}
+
 function linkActive(pathname: string, href: string) {
   if (href === "/archive") return pathname === "/archive" || pathname.startsWith("/p/");
   if (href === "/random") return pathname === "/random" || pathname === "/practice";
@@ -108,6 +127,7 @@ export function SiteMenu() {
   const [busy, setBusy] = useState(false);
   const [sound, setSound] = useState(true);
   const [theme, setTheme] = useState<"light" | "dark">("light");
+  const [boardStyle, setBoardStyleState] = useState<BoardStyle>("pixel");
   const signedIn = Boolean(user && !user.isAnonymous);
   const needsUsername = signedIn && !user?.displayName?.trim();
   const reduceMotion = useReducedMotion();
@@ -130,6 +150,7 @@ export function SiteMenu() {
 
   useEffect(() => {
     setSound(getSoundEnabled());
+    setBoardStyleState(getBoardStyle());
     const stored = getStoredTheme();
     const next =
       stored ?? (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
@@ -355,6 +376,37 @@ export function SiteMenu() {
                     }}
                   >
                     <SoundOffIcon />
+                  </button>
+                </div>
+                <div className="setting-pair" role="group" aria-label="Chess set">
+                  <button
+                    className={boardStyle === "pixel" ? "setting-btn active" : "setting-btn"}
+                    type="button"
+                    aria-label="Pixel pieces"
+                    aria-pressed={boardStyle === "pixel"}
+                    onClick={() => {
+                      setBoardStyleState("pixel");
+                      setBoardStyle("pixel");
+                    }}
+                  >
+                    <img
+                      className="setting-piece-preview"
+                      src="/pieces/wN.png"
+                      alt=""
+                      draggable={false}
+                    />
+                  </button>
+                  <button
+                    className={boardStyle === "classic" ? "setting-btn active" : "setting-btn"}
+                    type="button"
+                    aria-label="Classic pieces"
+                    aria-pressed={boardStyle === "classic"}
+                    onClick={() => {
+                      setBoardStyleState("classic");
+                      setBoardStyle("classic");
+                    }}
+                  >
+                    <ClassicKnightIcon />
                   </button>
                 </div>
               </div>

@@ -8,7 +8,7 @@ import { themeSummary } from "@/lib/themes";
 import { PIXEL_BOARD, PIXEL_PIECES } from "@/lib/pixel-chess";
 import { FunFact } from "./FunFact";
 import { ChessBoardLazy } from "./ChessBoardLazy";
-import { playSound } from "@/lib/settings";
+import { getBoardStyle, playSound, subscribeBoardStyle, type BoardStyle } from "@/lib/settings";
 import { buildShareText, shareResult, type PlyResult } from "@/lib/share";
 
 const LIVES = 3;
@@ -46,6 +46,7 @@ export function PuzzleGame({
   const [waiting, setWaiting] = useState(false);
   const [completed, setCompleted] = useState(false);
   const [replaying, setReplaying] = useState(false);
+  const [boardStyle, setBoardStyleState] = useState<BoardStyle>("pixel");
   const replayTimer = useRef<number | null>(null);
   const recordedRef = useRef(false);
   const locked = statusPlay !== "play" || waiting || completed || replaying;
@@ -328,6 +329,11 @@ export function PuzzleGame({
     };
   }, [persist, puzzle]);
 
+  useEffect(() => {
+    setBoardStyleState(getBoardStyle());
+    return subscribeBoardStyle(setBoardStyleState);
+  }, []);
+
   const resetBoard = useCallback(() => {
     if (replayTimer.current) window.clearTimeout(replayTimer.current);
     chessRef.current = new Chess(puzzle.fen);
@@ -391,33 +397,43 @@ export function PuzzleGame({
 
   const squareStyles = useMemo(() => {
     const styles: Record<string, CSSProperties> = {};
+    const lastFrom = boardStyle === "pixel" ? "rgba(201, 162, 39, 0.42)" : "rgba(47, 93, 80, 0.28)";
+    const lastTo = boardStyle === "pixel" ? "rgba(201, 162, 39, 0.58)" : "rgba(47, 93, 80, 0.4)";
+    const hintFrom = boardStyle === "pixel" ? "rgba(201, 162, 39, 0.45)" : "rgba(201, 162, 39, 0.45)";
+    const hintTo = boardStyle === "pixel" ? "rgba(201, 162, 39, 0.62)" : "rgba(201, 162, 39, 0.62)";
+    const selectedFill =
+      boardStyle === "pixel" ? "rgba(201, 162, 39, 0.5)" : "rgba(47, 93, 80, 0.32)";
+    const ring =
+      boardStyle === "pixel" ? "rgba(30, 61, 52, 0.9)" : "rgba(47, 93, 80, 0.85)";
+    const dot =
+      boardStyle === "pixel" ? "rgba(30, 61, 52, 0.55)" : "rgba(47, 93, 80, 0.45)";
     if (lastMove) {
-      styles[lastMove.from] = { backgroundColor: "rgba(201, 162, 39, 0.42)" };
-      styles[lastMove.to] = { backgroundColor: "rgba(201, 162, 39, 0.58)" };
+      styles[lastMove.from] = { backgroundColor: lastFrom };
+      styles[lastMove.to] = { backgroundColor: lastTo };
     }
     if (hintLevel >= 1 && expectedMove && statusPlay === "play") {
-      styles[expectedMove.from] = { backgroundColor: "rgba(201, 162, 39, 0.45)" };
+      styles[expectedMove.from] = { backgroundColor: hintFrom };
     }
     if (hintLevel >= 2 && expectedMove && statusPlay === "play") {
-      styles[expectedMove.to] = { backgroundColor: "rgba(201, 162, 39, 0.62)" };
+      styles[expectedMove.to] = { backgroundColor: hintTo };
     }
     if (selected) {
-      styles[selected] = { backgroundColor: "rgba(201, 162, 39, 0.5)" };
+      styles[selected] = { backgroundColor: selectedFill };
     }
     for (const move of legalTargets) {
       const occupied = Boolean(chessRef.current.get(move.to as Square));
       styles[move.to] = occupied
         ? {
-            boxShadow: "inset 0 0 0 3px rgba(30, 61, 52, 0.9)",
+            boxShadow: `inset 0 0 0 3px ${ring}`,
             backgroundColor: styles[move.to]?.backgroundColor,
           }
         : {
-            backgroundImage: "radial-gradient(circle, rgba(30, 61, 52, 0.55) 18%, transparent 20%)",
+            backgroundImage: `radial-gradient(circle, ${dot} 18%, transparent 20%)`,
             backgroundColor: styles[move.to]?.backgroundColor,
           };
     }
     return styles;
-  }, [expectedMove, hintLevel, lastMove, legalTargets, selected, statusPlay]);
+  }, [boardStyle, expectedMove, hintLevel, lastMove, legalTargets, selected, statusPlay]);
 
   const title =
     mode === "practice" || mode === "random"
@@ -428,21 +444,26 @@ export function PuzzleGame({
 
   return (
     <section className="game">
-      <div className="board-wrap">
+      <div className={`board-wrap ${boardStyle}`}>
         <ChessBoardLazy
+          key={boardStyle}
           options={{
-            id: `puzzle-${puzzle.id}`,
+            id: `puzzle-${puzzle.id}-${boardStyle}`,
             position: fen,
             boardOrientation: puzzle.orientation,
             allowDragging: !locked,
             animationDurationInMs: 220,
-            boardStyle: PIXEL_BOARD.boardStyle,
-            lightSquareStyle: PIXEL_BOARD.lightSquareStyle,
-            darkSquareStyle: PIXEL_BOARD.darkSquareStyle,
-            dropSquareStyle: PIXEL_BOARD.dropSquareStyle,
-            darkSquareNotationStyle: PIXEL_BOARD.darkSquareNotationStyle,
-            lightSquareNotationStyle: PIXEL_BOARD.lightSquareNotationStyle,
-            pieces: PIXEL_PIECES,
+            ...(boardStyle === "pixel"
+              ? {
+                  boardStyle: PIXEL_BOARD.boardStyle,
+                  lightSquareStyle: PIXEL_BOARD.lightSquareStyle,
+                  darkSquareStyle: PIXEL_BOARD.darkSquareStyle,
+                  dropSquareStyle: PIXEL_BOARD.dropSquareStyle,
+                  darkSquareNotationStyle: PIXEL_BOARD.darkSquareNotationStyle,
+                  lightSquareNotationStyle: PIXEL_BOARD.lightSquareNotationStyle,
+                  pieces: PIXEL_PIECES,
+                }
+              : { boardStyle: { width: "100%" } }),
             squareStyles,
             canDragPiece: ({ piece }) =>
               !locked && piece.pieceType[0] === chessRef.current.turn(),

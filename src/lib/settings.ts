@@ -1,5 +1,9 @@
 const SOUND_KEY = "daily-chess-sound";
 const THEME_KEY = "daily-chess-theme";
+const BOARD_STYLE_KEY = "daily-chess-board-style";
+const BOARD_STYLE_EVENT = "daily-chess-board-style";
+
+export type BoardStyle = "pixel" | "classic";
 
 export function getSoundEnabled(): boolean {
   if (typeof window === "undefined") return true;
@@ -19,6 +23,26 @@ export function getStoredTheme(): "light" | "dark" | null {
 export function setStoredTheme(theme: "light" | "dark") {
   window.localStorage.setItem(THEME_KEY, theme);
   document.documentElement.dataset.theme = theme;
+}
+
+export function getBoardStyle(): BoardStyle {
+  if (typeof window === "undefined") return "pixel";
+  return window.localStorage.getItem(BOARD_STYLE_KEY) === "classic" ? "classic" : "pixel";
+}
+
+export function setBoardStyle(style: BoardStyle) {
+  window.localStorage.setItem(BOARD_STYLE_KEY, style);
+  window.dispatchEvent(new Event(BOARD_STYLE_EVENT));
+}
+
+export function subscribeBoardStyle(onChange: (style: BoardStyle) => void) {
+  const notify = () => onChange(getBoardStyle());
+  window.addEventListener(BOARD_STYLE_EVENT, notify);
+  window.addEventListener("storage", notify);
+  return () => {
+    window.removeEventListener(BOARD_STYLE_EVENT, notify);
+    window.removeEventListener("storage", notify);
+  };
 }
 
 function beep(frequency: number, duration: number, type: OscillatorType = "sine") {
