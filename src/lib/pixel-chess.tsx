@@ -20,6 +20,8 @@ const PIECE_KEYS = [
 
 function SpritePiece({ src }: { src: string }) {
   return (
+    // Pixel sprites must stay unoptimized and pixelated.
+    // eslint-disable-next-line @next/next/no-img-element
     <img
       src={src}
       alt=""

@@ -393,7 +393,7 @@ export function PuzzleGame({
   const legalTargets = useMemo(() => {
     if (!selected || locked) return [];
     return chessRef.current.moves({ square: selected, verbose: true });
-  }, [locked, selected, fen]);
+  }, [locked, selected]);
 
   const squareStyles = useMemo(() => {
     const styles: Record<string, CSSProperties> = {};

@@ -194,22 +194,26 @@ export async function deleteCurrentAccount(password?: string) {
   const firebaseAuth = getFirebaseAuth();
   if (!firebaseAuth) throw new Error("Firebase is not configured");
   await firebaseAuth.authStateReady();
-  const user = firebaseAuth.currentUser;
-  if (!user || user.isAnonymous) throw new Error("Sign in first.");
+  const current = firebaseAuth.currentUser;
+  if (!current || current.isAnonymous) throw new Error("Sign in first.");
+  const account: User = current;
 
-  const usesPassword = user.providerData.some((provider) => provider.providerId === "password");
-  const usesGoogle = user.providerData.some((provider) => provider.providerId === "google.com");
+  const usesPassword = account.providerData.some((provider) => provider.providerId === "password");
+  const usesGoogle = account.providerData.some((provider) => provider.providerId === "google.com");
 
   async function reauthenticate() {
     if (usesGoogle) {
-      await reauthenticateWithPopup(user, new GoogleAuthProvider());
+      await reauthenticateWithPopup(account, new GoogleAuthProvider());
       return;
     }
     if (usesPassword) {
-      if (!password || !user.email) {
+      if (!password || !account.email) {
         throw new Error("Enter your password to delete this account.");
       }
-      await reauthenticateWithCredential(user, EmailAuthProvider.credential(user.email, password));
+      await reauthenticateWithCredential(
+        account,
+        EmailAuthProvider.credential(account.email, password),
+      );
       return;
     }
     throw new Error("Re-sign in, then try deleting again.");
@@ -218,9 +222,9 @@ export async function deleteCurrentAccount(password?: string) {
   async function wipeOwnedData() {
     const store = getFirebaseDb();
     if (store) {
-      const attempts = await getDocs(collection(store, "users", user.uid, "attempts"));
+      const attempts = await getDocs(collection(store, "users", account.uid, "attempts"));
       await Promise.all(attempts.docs.map((row) => deleteDoc(row.ref)));
-      await deleteDoc(doc(store, "users", user.uid)).catch(() => undefined);
+      await deleteDoc(doc(store, "users", account.uid)).catch(() => undefined);
     }
     const { clearLocalProgress } = await import("./local-progress");
     clearLocalProgress();
@@ -228,12 +232,14 @@ export async function deleteCurrentAccount(password?: string) {
 
   await wipeOwnedData();
   try {
-    await deleteUser(user);
+    await deleteUser(account);
   } catch (error) {
     const code = error && typeof error === "object" && "code" in error ? String(error.code) : "";
     if (!code.includes("requires-recent-login")) throw error;
     await reauthenticate();
-    await deleteUser(firebaseAuth.currentUser ?? user);
+    const fresh = firebaseAuth.currentUser;
+    if (!fresh) throw new Error("Sign in first.");
+    await deleteUser(fresh);
   }
   await afterAccountChange();
 }

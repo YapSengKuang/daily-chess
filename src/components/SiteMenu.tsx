@@ -420,6 +420,7 @@ export function SiteMenu() {
                       setBoardStyle("pixel");
                     }}
                   >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       className="setting-piece-preview"
                       src="/pieces/wN.png"
