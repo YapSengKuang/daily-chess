@@ -1,7 +1,7 @@
 import type { CSSProperties, JSX } from "react";
 
 const LIGHT = "#f3ead3";
-const DARK = "#2f5d50";
+const DARK = "#7eb8a4";
 
 const PIECE_KEYS = [
   "wP",

@@ -1,21 +1,7 @@
 import type { Metadata } from "next";
-import { Fraunces, Source_Sans_3 } from "next/font/google";
 import { SiteHeader } from "@/components/SiteHeader";
 import { siteUrl } from "@/lib/site-url";
 import "./globals.css";
-
-const display = Fraunces({
-  variable: "--font-display",
-  subsets: ["latin"],
-  display: "swap",
-  preload: false,
-});
-
-const sans = Source_Sans_3({
-  variable: "--font-sans",
-  subsets: ["latin"],
-  display: "swap",
-});
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl()),
@@ -40,7 +26,7 @@ export default function RootLayout({
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
-      <body className={`${display.variable} ${sans.variable}`}>
+      <body>
         <div className="shell">
           <SiteHeader />
           {children}

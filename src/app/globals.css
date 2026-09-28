@@ -1,6 +1,16 @@
 @import "tailwindcss";
 
+@font-face {
+  font-family: "CabinetGrotesk-Variable";
+  src: url("/fonts/CabinetGrotesk-Variable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-display: swap;
+  font-style: normal;
+}
+
 :root {
+  --font-sans: "CabinetGrotesk-Variable", sans-serif;
+  --font-display: "CabinetGrotesk-Variable", sans-serif;
   --bg: #f4efe4;
   --ink: #1c1915;
   --muted: #6d6558;
@@ -57,7 +67,7 @@ a {
 }
 
 .page-title {
-  font-family: var(--font-display), serif;
+  font-family: var(--font-display), sans-serif;
   font-size: 28px;
   margin: 0;
 }
@@ -72,8 +82,9 @@ a {
 }
 
 .brand {
-  font-family: var(--font-display), serif;
+  font-family: var(--font-display), sans-serif;
   font-size: 32px;
+  font-weight: 700;
   margin: 0;
 }
 
@@ -350,6 +361,45 @@ a {
   box-shadow: 2px 2px 0 #1e3d34;
 }
 
+.menu-danger {
+  display: grid;
+  gap: 8px;
+  padding-top: 4px;
+  border-top: 1px solid var(--line);
+}
+
+.menu-danger input {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: var(--input);
+  color: var(--ink);
+  font: inherit;
+}
+
+.btn-danger {
+  background: var(--bad);
+  color: #fffaf1;
+  border: 2px solid #1e3d34;
+  border-radius: 4px;
+  padding: 10px 16px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 4px 4px 0 #1e3d34;
+  transition: transform 80ms ease, box-shadow 80ms ease;
+}
+
+.btn-danger:active:not(:disabled) {
+  transform: translate(4px, 4px);
+  box-shadow: 0 0 0 #1e3d34;
+}
+
+.btn-danger:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
 .game {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(240px, 360px);
@@ -372,6 +422,12 @@ a {
 
 .about-copy p {
   margin: 0;
+}
+
+.about-copy h3 {
+  font-family: var(--font-display), sans-serif;
+  font-size: 16px;
+  margin: 8px 0 0;
 }
 
 .about-links {
@@ -404,7 +460,7 @@ a {
 }
 
 .board-wrap {
-  background: #2f5d50;
+  background: #7eb8a4;
   border: 4px solid #1e3d34;
   box-shadow: 6px 6px 0 #1e3d34;
   border-radius: 6px;
@@ -437,7 +493,7 @@ a {
 
 .panel h2,
 .panel h1 {
-  font-family: var(--font-display), serif;
+  font-family: var(--font-display), sans-serif;
   margin: 0 0 8px;
 }
 
@@ -581,7 +637,7 @@ a.cal-cell:active {
 .stat-grid dd {
   margin: 4px 0 0;
   font-size: 28px;
-  font-family: var(--font-display), serif;
+  font-family: var(--font-display), sans-serif;
 }
 
 @media (max-width: 800px) {

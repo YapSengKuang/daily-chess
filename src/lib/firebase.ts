@@ -15,10 +15,13 @@ import {
   signInWithPopup,
   signOut as firebaseSignOut,
   updateProfile,
+  deleteUser,
+  reauthenticateWithPopup,
+  reauthenticateWithCredential,
   type Auth,
   type User,
 } from "firebase/auth";
-import { doc, getFirestore, setDoc, type Firestore } from "firebase/firestore";
+import { doc, getDocs, getFirestore, setDoc, collection, deleteDoc, type Firestore } from "firebase/firestore";
 import { getFirebaseConfig, isFirebaseConfigured } from "./firebase-config";
 import { normalizeEmail, passwordIssue } from "./credentials";
 import { normalizeUsername } from "./username";
@@ -82,6 +85,9 @@ export function authErrorMessage(error: unknown) {
   if (code.includes("weak-password")) return "Password must be at least 8 characters.";
   if (code.includes("invalid-email")) return "Enter a valid email address.";
   if (code.includes("too-many-requests")) return "Too many attempts. Try again later.";
+  if (code.includes("requires-recent-login")) {
+    return "Enter your password (or continue with Google) to confirm deletion.";
+  }
   return error instanceof Error ? error.message : "Could not sign in.";
 }
 
@@ -181,6 +187,54 @@ export async function signOutUser() {
   const firebaseAuth = getFirebaseAuth();
   if (!firebaseAuth) return;
   await firebaseSignOut(firebaseAuth);
+  await afterAccountChange();
+}
+
+export async function deleteCurrentAccount(password?: string) {
+  const firebaseAuth = getFirebaseAuth();
+  if (!firebaseAuth) throw new Error("Firebase is not configured");
+  await firebaseAuth.authStateReady();
+  const user = firebaseAuth.currentUser;
+  if (!user || user.isAnonymous) throw new Error("Sign in first.");
+
+  const usesPassword = user.providerData.some((provider) => provider.providerId === "password");
+  const usesGoogle = user.providerData.some((provider) => provider.providerId === "google.com");
+
+  async function reauthenticate() {
+    if (usesGoogle) {
+      await reauthenticateWithPopup(user, new GoogleAuthProvider());
+      return;
+    }
+    if (usesPassword) {
+      if (!password || !user.email) {
+        throw new Error("Enter your password to delete this account.");
+      }
+      await reauthenticateWithCredential(user, EmailAuthProvider.credential(user.email, password));
+      return;
+    }
+    throw new Error("Re-sign in, then try deleting again.");
+  }
+
+  async function wipeOwnedData() {
+    const store = getFirebaseDb();
+    if (store) {
+      const attempts = await getDocs(collection(store, "users", user.uid, "attempts"));
+      await Promise.all(attempts.docs.map((row) => deleteDoc(row.ref)));
+      await deleteDoc(doc(store, "users", user.uid)).catch(() => undefined);
+    }
+    const { clearLocalProgress } = await import("./local-progress");
+    clearLocalProgress();
+  }
+
+  await wipeOwnedData();
+  try {
+    await deleteUser(user);
+  } catch (error) {
+    const code = error && typeof error === "object" && "code" in error ? String(error.code) : "";
+    if (!code.includes("requires-recent-login")) throw error;
+    await reauthenticate();
+    await deleteUser(firebaseAuth.currentUser ?? user);
+  }
   await afterAccountChange();
 }
 

@@ -15,7 +15,7 @@ import type { User } from "firebase/auth";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 
 const LINKS = [
   { href: "/", label: "Today" },
@@ -128,6 +128,9 @@ export function SiteMenu() {
   const [sound, setSound] = useState(true);
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [boardStyle, setBoardStyleState] = useState<BoardStyle>("pixel");
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [deletePassword, setDeletePassword] = useState("");
+  const wrapRef = useRef<HTMLDivElement>(null);
   const signedIn = Boolean(user && !user.isAnonymous);
   const needsUsername = signedIn && !user?.displayName?.trim();
   const reduceMotion = useReducedMotion();
@@ -162,7 +165,33 @@ export function SiteMenu() {
     setOpen(false);
     setPanel("menu");
     setError("");
+    setDeleteConfirm(false);
+    setDeletePassword("");
   }, [pathname]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onPointerDown = (event: PointerEvent) => {
+      if (!wrapRef.current?.contains(event.target as Node)) {
+        setOpen(false);
+        setPanel("menu");
+        setDeleteConfirm(false);
+      }
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setOpen(false);
+        setPanel("menu");
+        setDeleteConfirm(false);
+      }
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [open]);
 
   async function run(action: (api: Awaited<ReturnType<typeof loadFirebase>>) => Promise<void>) {
     setBusy(true);
@@ -175,8 +204,10 @@ export function SiteMenu() {
       setPanel("menu");
       const nextUser = await api.getCurrentUser();
       setUser(nextUser);
-      if (nextUser && !nextUser.isAnonymous) {
+      if (!nextUser || !nextUser.isAnonymous) {
         setOpen(false);
+        setDeleteConfirm(false);
+        setDeletePassword("");
       }
     } catch (cause) {
       const api = await loadFirebase();
@@ -210,7 +241,7 @@ export function SiteMenu() {
   }
 
   return (
-    <div className="menu-wrap">
+    <div className="menu-wrap" ref={wrapRef}>
       <motion.button
         className="burger"
         type="button"
@@ -410,6 +441,63 @@ export function SiteMenu() {
                   </button>
                 </div>
               </div>
+
+              {signedIn ? (
+                <div className="menu-danger">
+                  {deleteConfirm ? (
+                    <>
+                      <p className="muted">
+                        Delete your account, username, and saved progress? This cannot be undone.
+                      </p>
+                      {user?.providerData.some((provider) => provider.providerId === "password") ? (
+                        <input
+                          type="password"
+                          autoComplete="current-password"
+                          placeholder="Password"
+                          value={deletePassword}
+                          onChange={(event) => setDeletePassword(event.target.value)}
+                          maxLength={128}
+                        />
+                      ) : null}
+                      <button
+                        className="btn btn-ghost"
+                        type="button"
+                        disabled={busy}
+                        onClick={() => {
+                          setDeleteConfirm(false);
+                          setDeletePassword("");
+                          setError("");
+                        }}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        className="btn-danger"
+                        type="button"
+                        disabled={busy}
+                        onClick={() =>
+                          void run((api) => api.deleteCurrentAccount(deletePassword))
+                        }
+                      >
+                        Yes, delete
+                      </button>
+                      {error ? <p className="muted">{error}</p> : null}
+                    </>
+                  ) : (
+                    <button
+                      className="btn-danger"
+                      type="button"
+                      disabled={busy}
+                      onClick={() => {
+                        setDeleteConfirm(true);
+                        setError("");
+                      }}
+                    >
+                      Delete account
+                    </button>
+                  )}
+                </div>
+              ) : null}
             </>
           ) : (
             <div className="auth-panel nested">

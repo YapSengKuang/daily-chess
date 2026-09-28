@@ -2,7 +2,7 @@ import { PuzzleGame } from "@/components/PuzzleGame";
 import { getDailyPuzzle } from "@/lib/puzzles";
 import { todayUtc } from "@/lib/date";
 
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
 export default function Home() {
   const puzzle = getDailyPuzzle(todayUtc());
