@@ -21,13 +21,22 @@ export function buildShareText(options: {
     : `X/${options.playerMoves}`;
   const label = options.number > 0 ? `Daily Chess #${options.number} ${options.date}` : "Daily Chess · Random";
 
-  return [`${label}`, `${score}  ${grid}`, `Streak: ${options.streak} 🔥`].join("\n");
+  return [
+    `${label}`,
+    `${score}  ${grid}`,
+    `Streak: ${options.streak} 🔥`,
+    "https://daily-chess-rho.vercel.app/",
+  ].join("\n");
 }
 
 export async function shareResult(text: string): Promise<"shared" | "copied"> {
   if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
     try {
-      await navigator.share({ title: "Daily Chess", text });
+      await navigator.share({
+        title: "Daily Chess",
+        text,
+        url: "https://daily-chess-rho.vercel.app/",
+      });
       return "shared";
     } catch {
       // Fall through to clipboard if the user cancels or share is unavailable.
