@@ -34,7 +34,7 @@ export function Countdown() {
 
   return (
     <p className="muted countdown">
-      Next puzzle in {label || "—"} · resets 00:00 UTC
+      Next puzzle in {label || "—"}
     </p>
   );
 }

@@ -535,7 +535,6 @@ export function PuzzleGame({
             {statusPlay !== "play" && (
               <>
                 <p className="solution">Solution: {solutionSans.join(" ")}</p>
-                <textarea readOnly value={shareText} rows={4} />
                 <div className="actions">
                   <button
                     className="btn"
