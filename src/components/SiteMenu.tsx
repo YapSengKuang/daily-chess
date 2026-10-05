@@ -3,6 +3,7 @@
 import { loadFirebase } from "@/lib/firebase-lazy";
 import { normalizeEmail, passwordIssue } from "@/lib/credentials";
 import {
+  applyTheme,
   getBoardStyle,
   getSoundEnabled,
   getStoredTheme,
@@ -158,7 +159,7 @@ export function SiteMenu() {
     const next =
       stored ?? (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
     setTheme(next);
-    document.documentElement.dataset.theme = next;
+    applyTheme(next);
   }, []);
 
   useEffect(() => {

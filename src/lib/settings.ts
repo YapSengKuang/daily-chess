@@ -5,6 +5,11 @@ const BOARD_STYLE_EVENT = "daily-chess-board-style";
 
 export type BoardStyle = "pixel" | "classic";
 
+export const THEME_COLORS = {
+  light: "#f4efe4",
+  dark: "#14110e",
+} as const;
+
 export function getSoundEnabled(): boolean {
   if (typeof window === "undefined") return true;
   return window.localStorage.getItem(SOUND_KEY) !== "off";
@@ -20,9 +25,28 @@ export function getStoredTheme(): "light" | "dark" | null {
   return value === "dark" || value === "light" ? value : null;
 }
 
+export function applyTheme(theme: "light" | "dark") {
+  const dark = theme === "dark";
+  const root = document.documentElement;
+  root.dataset.theme = theme;
+  root.classList.toggle("dark", dark);
+  root.style.colorScheme = theme;
+  if (document.body) {
+    document.body.classList.toggle("dark", dark);
+    document.body.style.colorScheme = theme;
+  }
+  let meta = document.querySelector('meta[name="theme-color"]');
+  if (!meta) {
+    meta = document.createElement("meta");
+    meta.setAttribute("name", "theme-color");
+    document.head.appendChild(meta);
+  }
+  meta.setAttribute("content", THEME_COLORS[theme]);
+}
+
 export function setStoredTheme(theme: "light" | "dark") {
   window.localStorage.setItem(THEME_KEY, theme);
-  document.documentElement.dataset.theme = theme;
+  applyTheme(theme);
 }
 
 export function getBoardStyle(): BoardStyle {
