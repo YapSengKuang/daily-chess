@@ -4,17 +4,15 @@ import { useEffect, useState } from "react";
 
 export function FunFact() {
   const [text, setText] = useState("Loading today's fun fact…");
-  const [source, setSource] = useState("");
 
   useEffect(() => {
     let cancelled = false;
     void fetch("/api/fun-fact")
       .then(async (response) => {
-        const body = (await response.json()) as { text?: string; source?: string; error?: string };
+        const body = (await response.json()) as { text?: string; error?: string };
         if (cancelled) return;
         if (body.text) {
           setText(body.text);
-          setSource(body.source ?? "");
           return;
         }
         setText(
@@ -35,7 +33,6 @@ export function FunFact() {
     <aside className="fun-fact panel">
       <p className="kicker">Today&apos;s fun fact</p>
       <p>{text}</p>
-      {source ? <p className="muted">Source: {source}</p> : null}
     </aside>
   );
 }
