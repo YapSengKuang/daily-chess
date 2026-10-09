@@ -444,7 +444,7 @@ export function PuzzleGame({
 
   return (
     <section className="game">
-      <div className={`board-wrap ${boardStyle}`}>
+      <div className={`board-wrap ${boardStyle}${completed && !replaying ? " finished" : ""}`}>
         <ChessBoardLazy
           key={boardStyle}
           options={{

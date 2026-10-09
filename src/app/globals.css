@@ -493,6 +493,13 @@ a {
   padding: 10px;
 }
 
+.board-wrap.finished {
+  filter: grayscale(1) contrast(0.9);
+  opacity: 0.62;
+  pointer-events: none;
+  transition: filter 200ms ease, opacity 200ms ease;
+}
+
 .board-skeleton {
   width: 100%;
   aspect-ratio: 1;
